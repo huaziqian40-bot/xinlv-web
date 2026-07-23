@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block nav_home %}active{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{{ T.hero_title }}</h1>
+  <p>{{ T.hero_sub }}</p>
+</section>
+
+<div id="import-banner" class="import-banner" style="display:none">
+  检测到这台设备本地有 <b id="ib-count">0</b> 条心情记录，要导入到你的账号吗？
+  <button class="primary" id="ib-import">导入</button>
+  <button class="ghost" id="ib-ignore">先不用</button>
+</div>
+
+<div class="calendar-card">
+  <div class="view-tabs" id="view-tabs">
+    <button class="vt active" data-view="month">月</button>
+    <button class="vt" data-view="week">周</button>
+    <button class="vt" data-view="year">年</button>
+  </div>
+
+  <!-- 月视图（服务器已渲染，切换时直接用；日期导航用链接） -->
+  <div class="view-pane" id="pane-month">
+    <div class="cal-head">
+      <a class="nav-btn" href="?y={{ prev.y }}&m={{ prev.m }}">‹</a>
+      <h2>{{ month_name }}</h2>
+      <a class="nav-btn" href="?y={{ next.y }}&m={{ next.m }}">›</a>
+    </div>
+    <div class="cal-grid cal-weekdays">
+      {% for w in weekday_labels %}<div class="wd">{{ w }}</div>{% endfor %}
+    </div>
+    <div class="cal-grid">
+      {% for week in weeks %}{% for cell in week %}
+        {% if cell.day %}
+          <button class="day {% if cell.is_today %}today{% endif %} {% if cell.in_future %}future{% endif %}"
+                  data-iso="{{ cell.iso }}"
+                  {% if not cell.in_future %}onclick="openMood('{{ cell.iso }}')"{% else %}disabled{% endif %}
+                  {% if cell.entry %}style="background:{{ cell.entry.info.color }}22;border-color:{{ cell.entry.info.color }}"{% endif %}>
+            <span class="dnum">{{ cell.day }}</span>
+            <span class="demoji">{% if cell.entry %}{{ cell.entry.info.emoji }}{% endif %}</span>
+          </button>
+        {% else %}<div class="day empty"></div>{% endif %}
+      {% endfor %}{% endfor %}
+    </div>
+  </div>
+
+  <!-- 周视图（前端渲染） -->
+  <div class="view-pane" id="pane-week" style="display:none">
+    <div class="cal-head">
+      <button class="nav-btn" id="week-prev">‹</button>
+      <h2 id="week-title">本周</h2>
+      <button class="nav-btn" id="week-next">›</button>
+    </div>
+    <div class="week-grid" id="week-grid"></div>
+  </div>
+
+  <!-- 年视图（前端渲染） -->
+  <div class="view-pane" id="pane-year" style="display:none">
+    <div class="cal-head">
+      <button class="nav-btn" id="year-prev">‹</button>
+      <h2 id="year-title">2026年</h2>
+      <button class="nav-btn" id="year-next">›</button>
+    </div>
+    <div class="year-grid" id="year-grid"></div>
+  </div>
+</div>
+
+<div class="recent" id="recent-wrap">
+  {% if recent %}
+  <h3>最近的心情</h3>
+  <div class="recent-list">
+    {% for e in recent %}
+    <a class="chip" href="/result/?mood={{ e.mood }}&date={{ e.date|date:'Y-m-d' }}"
+       style="border-color:{{ e.info.color }}">
+      {{ e.info.emoji }} {{ e.date|date:'n月j日' }} {{ e.info.label }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- 记录心情的弹窗 -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeMood()">
+  <form class="modal" method="post" action="/save/" id="mood-form">
+    {% csrf_token %}
+    <input type="hidden" name="date" id="f-date">
+    <h3 id="modal-title">记录心情</h3>
+    <!-- 当天已有的多条记录（由新到旧，仅登录用户）；向上滚动可看更早的 -->
+    <div id="day-list" class="day-list" style="display:none"></div>
+    <div id="add-label" class="add-label" style="display:none">再记一条 ↓</div>
+    <div class="mood-grid">
+      {% for key,label,emoji,color,val in moods %}
+      <label class="mood-opt" style="--c:{{ color }}">
+        <input type="radio" name="mood" value="{{ key }}" required>
+        <span class="me">{{ emoji }}</span>
+        <span class="ml">{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <textarea name="note" id="f-note" placeholder="想写点什么吗？（可留空）" rows="3"></textarea>
+    <div class="modal-btns">
+      <button type="button" class="ghost" onclick="closeMood()">取消</button>
+      <button type="submit" class="primary">保存并看看建议</button>
+    </div>
+  </form>
+</div>
+{{ mood_map|json_script:"mood-meta" }}
+{% endblock %}
+
+{% block script %}
+<script>
+const MOOD_META = JSON.parse(document.getElementById('mood-meta').textContent);
+const IS_AUTHED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+const KEY = 'moodlog';
+const load  = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } };
+const store = (o) => localStorage.setItem(KEY, JSON.stringify(o));
+
+function openMood(iso){
+  document.getElementById('mood-form').reset();
+  document.getElementById('f-date').value = iso;
+  document.getElementById('f-note').value = '';
+  const [y,m,d] = iso.split('-');
+  document.getElementById('modal-title').textContent = `${+m}月${+d}日 · 此刻的心情`;
+  const listBox = document.getElementById('day-list');
+  const addLabel = document.getElementById('add-label');
+  listBox.style.display = 'none'; addLabel.style.display = 'none'; listBox.innerHTML = '';
+
+  if(IS_AUTHED){
+    // 登录用户：拉取当天已有的多条记录显示在上方（由新到旧）
+    fetch('/day/?date=' + iso).then(r=>r.json()).then(data=>{
+      if(data.entries && data.entries.length){
+        listBox.innerHTML = data.entries.map(e=>
+          `<div class="day-item" style="border-color:${e.color}">
+             <span class="di-emoji">${e.emoji}</span>
+             <span class="di-main"><b>${e.label}</b>${e.note ? ' · '+escapeHtml(e.note) : ''}</span>
+             <span class="di-time">${e.time}</span>
+           </div>`).join('');
+        listBox.style.display = 'block';
+        addLabel.style.display = 'block';
+      }
+    }).catch(()=>{});
+  } else {
+    // 访客：本地预填最近一条
+    const rec = load()[iso];
+    if(rec){
+      const r = document.querySelector(`input[name=mood][value="${rec.mood}"]`);
+      if(r) r.checked = true;
+      document.getElementById('f-note').value = rec.note || '';
+    }
+  }
+  document.getElementById('modal').classList.add('show');
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function closeMood(){ document.getElementById('modal').classList.remove('show'); }
+
+// 访客：拦截提交，写本地，再去推荐页
+if(!IS_AUTHED){
+  document.getElementById('mood-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const iso = document.getElementById('f-date').value;
+    const mood = (document.querySelector('input[name=mood]:checked')||{}).value;
+    if(!mood) return;
+    const note = document.getElementById('f-note').value.trim();
+    const o = load(); o[iso] = {mood, note}; store(o);
+    location.href = `/result/?mood=${mood}&date=${iso}`;
+  });
+}
+
+// 渲染本地记录到日历 + 最近列表（仅访客）
+function paintLocal(){
+  if(IS_AUTHED) return;
+  const o = load();
+  document.querySelectorAll('.day[data-iso]').forEach(btn=>{
+    const rec = o[btn.dataset.iso];
+    const em = btn.querySelector('.demoji');
+    if(rec && MOOD_META[rec.mood]){
+      const c = MOOD_META[rec.mood].color;
+      btn.style.background = c + '22'; btn.style.borderColor = c;
+      if(em) em.textContent = MOOD_META[rec.mood].emoji;
+    } else if(em){ em.textContent=''; btn.style.background=''; btn.style.borderColor=''; }
+  });
+  // 最近 7 条
+  const keys = Object.keys(o).sort().reverse().slice(0,7);
+  const wrap = document.getElementById('recent-wrap');
+  if(keys.length){
+    let html = '<h3>最近的心情</h3><div class="recent-list">';
+    keys.forEach(iso=>{
+      const r = o[iso], meta = MOOD_META[r.mood]; if(!meta) return;
+      const [y,m,d] = iso.split('-');
+      html += `<a class="chip" href="/result/?mood=${r.mood}&date=${iso}" style="border-color:${meta.color}">${meta.emoji} ${+m}月${+d}日 ${meta.label}</a>`;
+    });
+    wrap.innerHTML = html + '</div>';
+  }
+}
+paintLocal();
+
+// ============ 月/周/年 视图切换（仅登录用户有周/年数据） ============
+(function(){
+  const tabs = document.getElementById('view-tabs');
+  if(!tabs) return;
+  const panes = {
+    month: document.getElementById('pane-month'),
+    week: document.getElementById('pane-week'),
+    year: document.getElementById('pane-year'),
+  };
+  let weekAnchor = new Date();   // 周视图锚点
+  let yearNum = new Date().getFullYear();
+
+  tabs.querySelectorAll('.vt').forEach(btn=>{
+    btn.onclick = ()=>{
+      tabs.querySelectorAll('.vt').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const v = btn.dataset.view;
+      for(const k in panes) panes[k].style.display = (k===v?'block':'none');
+      if(v==='week') renderWeek();
+      if(v==='year') renderYear();
+    };
+  });
+
+  function isoOf(d){ return d.toISOString().slice(0,10); }
+  function guestNotice(pane){
+    pane.innerHTML = '<p class="muted" style="text-align:center;padding:2rem">周/年视图需要<a href="/login/?next=/">登录</a>后查看（访客数据存在本机，仅支持月视图）。</p>';
+  }
+
+  // ---- 周视图：七天横排，纵轴为一天内时间（顶部0点），情绪按时刻纵向排 ----
+  async function renderWeek(){
+    const grid = document.getElementById('week-grid');
+    if(!IS_AUTHED){ guestNotice(document.getElementById('pane-week').querySelector('#week-grid')||grid); return; }
+    grid.innerHTML = '<p class="muted" style="padding:1rem">加载中…</p>';
+    const data = await fetch('/calendar-data/?scope=week&date=' + isoOf(weekAnchor)).then(r=>r.json());
+    document.getElementById('week-title').textContent = data.monday + ' 这周';
+    const labels = ['一','二','三','四','五','六','日'];
+    let html = '<div class="wk-col wk-axis"><div class="wk-dayhead"></div>';
+    for(let h=0; h<24; h+=3) html += `<div class="wk-hour">${h}:00</div>`;
+    html += '</div>';
+    data.days.forEach((iso, i)=>{
+      const [Y,M,D] = iso.split('-');
+      const items = data.entries[iso] || [];
+      html += `<div class="wk-col" data-iso="${iso}" onclick="openMood('${iso}')">`;
+      html += `<div class="wk-dayhead">${labels[i]}<br><b>${+D}</b></div>`;
+      html += `<div class="wk-track">`;
+      items.forEach(e=>{
+        const topPct = (e.minutes / 1440) * 100;
+        html += `<div class="wk-dot" style="top:${topPct}%;border-color:${e.color}" title="${e.time} ${e.label}${e.note?(' · '+e.note):''}">${e.emoji}</div>`;
+      });
+      html += `</div></div>`;
+    });
+    grid.innerHTML = html;
+  }
+  document.getElementById('week-prev').onclick = ()=>{ weekAnchor.setDate(weekAnchor.getDate()-7); renderWeek(); };
+  document.getElementById('week-next').onclick = ()=>{ weekAnchor.setDate(weekAnchor.getDate()+7); renderWeek(); };
+
+  // ---- 年视图：12个小月历，每天一个情绪颜色点 ----
+  async function renderYear(){
+    const grid = document.getElementById('year-grid');
+    if(!IS_AUTHED){ guestNotice(document.getElementById('pane-year').querySelector('#year-grid')||grid); return; }
+    document.getElementById('year-title').textContent = yearNum + '年';
+    grid.innerHTML = '<p class="muted" style="padding:1rem">加载中…</p>';
+    const data = await fetch('/calendar-data/?scope=year&y=' + yearNum).then(r=>r.json());
+    const days = data.days || {};
+    let html = '';
+    for(let m=1; m<=12; m++){
+      html += `<div class="ym"><div class="ym-title">${m}月</div><div class="ym-grid">`;
+      const first = new Date(yearNum, m-1, 1);
+      let lead = (first.getDay()+6)%7;               // 周一为第一列
+      for(let i=0;i<lead;i++) html += '<span class="ym-cell"></span>';
+      const dim = new Date(yearNum, m, 0).getDate();
+      for(let d=1; d<=dim; d++){
+        const iso = `${yearNum}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const rep = days[iso];
+        const style = rep ? `style="background:${rep.color}"` : '';
+        const cls = rep ? 'ym-cell has' : 'ym-cell';
+        html += `<span class="${cls}" ${style} onclick="openMood('${iso}')" title="${iso}${rep?(' '+rep.label):''}"></span>`;
+      }
+      html += '</div></div>';
+    }
+    grid.innerHTML = html;
+  }
+  document.getElementById('year-prev').onclick = ()=>{ yearNum--; renderYear(); };
+  document.getElementById('year-next').onclick = ()=>{ yearNum++; renderYear(); };
+})();
+
+// 登录用户：若本地还有未同步的记录，提示导入
+if(IS_AUTHED){
+  const o = load(); const n = Object.keys(o).length;
+  if(n > 0 && sessionStorage.getItem('ignore_import') !== '1'){
+    document.getElementById('ib-count').textContent = n;
+    document.getElementById('import-banner').style.display = 'block';
+  }
+  document.getElementById('ib-ignore').onclick = ()=>{
+    sessionStorage.setItem('ignore_import','1');
+    document.getElementById('import-banner').style.display='none';
+  };
+  document.getElementById('ib-import').onclick = async ()=>{
+    const csrf = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+    try{
+      const r = await fetch('/api/import-local/', {method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+        body: JSON.stringify({moods: load()})});
+      const data = await r.json();
+      localStorage.removeItem(KEY);
+      alert('已导入 ' + (data.imported||0) + ' 条记录到你的账号。');
+      location.reload();
+    }catch(e){ alert('导入失败，稍后再试。'); }
+  };
+}
+</script>
+{% endblock %}

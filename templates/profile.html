@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ target.username }} · 主页{% endblock %}
+{% block content %}
+<section class="profile-head">
+  <div class="pf-avatar">
+    {% if prof.avatar %}<img src="{{ prof.avatar.url }}" alt="头像">
+    {% else %}<div class="pf-avatar-ph">{{ target.username|first|upper }}</div>{% endif %}
+  </div>
+  <div class="pf-meta">
+    <h1>{{ target.username }}
+      {% for b in badges %}<a class="badge" href="/badges/#{{ b.days }}" title="{{ b.name }}（{{ b.days }}天）">{{ b.emoji }}</a>{% endfor %}
+    </h1>
+    {% if prof.bio %}<p class="pf-bio">{{ prof.bio }}</p>{% endif %}
+    <div class="pf-stats">
+      <span><b>{{ streak }}</b> {{ T.streak }}{{ T.days }}</span>
+      <span><b>{{ total }}</b> {{ T.total_records }}</span>
+      <span><b>{{ badges|length }}</b> {{ T.badges }}</span>
+    </div>
+  </div>
+</section>
+
+{% if own %}
+<details class="pf-edit">
+  <summary>{{ T.edit_profile }}</summary>
+  <form method="post" action="/me/edit/" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label class="m-field">{{ T.avatar }}<input type="file" name="avatar" accept="image/*"></label>
+    <label class="m-field">{{ T.bio }}<input type="text" name="bio" value="{{ prof.bio }}" maxlength="200"></label>
+    <button class="primary" type="submit">{{ T.save }}</button>
+  </form>
+</details>
+{% endif %}
+
+<div class="badge-track">
+  {% for t,emoji,name in badge_defs %}{% endfor %}
+</div>
+
+<h2 class="pf-section">{{ T.mood_footprint }}</h2>
+<div class="pf-feed">
+  {% for e in entries %}
+  <div class="feed-item" style="border-color:{{ e.meta.color }}">
+    <div class="fi-emoji">{{ e.meta.emoji }}</div>
+    <div class="fi-body">
+      <div class="fi-top"><b>{{ e.meta.label }}</b>
+        <span class="fi-date">{{ e.date|date:"Y年n月j日" }}{% if e.at %} {{ e.at|time:"H:i" }}{% endif %}</span></div>
+      {% if e.note %}<div class="fi-note">{{ e.note }}</div>{% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <p class="muted">{{ T.no_records }}</p>
+  {% endfor %}
+</div>
+{% endblock %}

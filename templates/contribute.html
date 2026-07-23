@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block nav_contrib %}active{% endblock %}
+{% block title %}我要分享{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{{ T.contribute_title }}</h1>
+  <p>{{ T.contribute_sub }}</p>
+</section>
+
+{% if messages %}<div class="msgs">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+
+<div class="block">
+  <form method="post" action="/contribute/" enctype="multipart/form-data" class="contrib-form">
+    {% csrf_token %}
+    <div class="cf-field">
+      <label>类型</label>
+      <select name="kind" id="cf-kind" required>
+        {% for k,label in kinds %}<option value="{{ k }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div class="cf-field">
+      <label>标题 <span class="cf-hint">（可选）</span></label>
+      <input type="text" name="title" maxlength="200" placeholder="给你的分享起个名字">
+    </div>
+
+    <!-- 文字内容：小知识/建议 -->
+    <div class="cf-field" id="cf-text">
+      <label>内容</label>
+      <textarea name="content" rows="4" placeholder="写下你想分享的小知识或建议"></textarea>
+    </div>
+
+    <!-- 出处：仅心理学小知识（与管理员后台字段一致） -->
+    <div class="cf-field" id="cf-source" style="display:none">
+      <label>出处 / 作者 <span class="cf-hint">（可选）</span></label>
+      <input type="text" name="source" maxlength="200" placeholder="这条小知识来自哪里？作者是谁？">
+    </div>
+
+    <!-- 链接：视频 -->
+    <div class="cf-field" id="cf-link" style="display:none">
+      <label>视频链接</label>
+      <input type="text" name="content_link" placeholder="粘贴 B 站等视频链接">
+    </div>
+
+    <!-- 文件：音乐 -->
+    <div class="cf-field" id="cf-audio" style="display:none">
+      <label>音频文件</label>
+      <input type="file" name="audio" accept="audio/*">
+      <div class="cf-hint">支持 mp3 / m4a / flac / ogg / wav / aac</div>
+    </div>
+
+    <div class="cf-field" id="cf-moods">
+      <label>适用心情</label>
+      <div class="mood-checks">
+        {% for key,label,emoji,color,val in moods %}
+        <label class="mc"><input type="checkbox" name="moods" value="{{ key }}"> {{ emoji }} {{ label }}</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <p class="cf-hint" id="cf-tip-note" style="display:none">💡 心理学小知识会在正面情绪时展示，无需选择对应心情。</p>
+
+    <button class="primary big" type="submit">{{ T.submit }}</button>
+    <p class="cf-note">提交后会先由 AI 审核内容是否健康、与所选情绪相符；通过即发布，不通过转管理员复审。</p>
+  </form>
+</div>
+
+<div class="block">
+  <h2>{{ T.my_submissions }}</h2>
+  {% for c in mine %}
+  <div class="sub-row">
+    <span class="sub-kind">{{ c.get_kind_display }}</span>
+    <span class="sub-title">{{ c.title|default:c.content|default:"（音频）"|truncatechars:30 }}</span>
+    <span class="sub-status s-{{ c.status }}">{{ c.get_status_display }}</span>
+  </div>
+  {% empty %}<p class="muted">还没有投稿。</p>{% endfor %}
+</div>
+
+<script>
+  // 按类型显示对应输入框，并把链接值同步到 content
+  const kindSel = document.getElementById('cf-kind');
+  const boxes = {text: document.getElementById('cf-text'), link: document.getElementById('cf-link'), audio: document.getElementById('cf-audio')};
+  const sourceBox = document.getElementById('cf-source');
+  const moodsBox = document.getElementById('cf-moods');
+  const tipNote = document.getElementById('cf-tip-note');
+  const linkInput = boxes.link.querySelector('input');
+  const textArea = boxes.text.querySelector('textarea');
+  function sync(){
+    const k = kindSel.value;
+    boxes.text.style.display  = (k==='tip'||k==='activity') ? 'block':'none';
+    boxes.link.style.display  = (k==='video') ? 'block':'none';
+    boxes.audio.style.display = (k==='music') ? 'block':'none';
+    // 出处栏：仅小知识（与管理员后台字段一致）
+    sourceBox.style.display = (k==='tip') ? 'block':'none';
+    // 情绪板块：小知识不选情绪（正面情绪默认展示），其它类型才选
+    moodsBox.style.display = (k==='tip') ? 'none':'block';
+    tipNote.style.display  = (k==='tip') ? 'block':'none';
+  }
+  // 提交时把视频链接写进 content
+  kindSel.form.addEventListener('submit', ()=>{
+    if(kindSel.value==='video'){ textArea.value = linkInput.value; }
+  });
+  kindSel.addEventListener('change', sync);
+  sync();
+</script>
+{% endblock %}

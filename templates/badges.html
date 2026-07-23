@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}徽章说明{% endblock %}
+{% block content %}
+<section class="hero"><h1>🏅 {{ T.badge_page_title }}</h1><p>{{ T.badge_page_sub }}</p></section>
+<div class="block">
+  {% for b in badge_list %}
+  <div class="badge-row" id="{{ b.days }}">
+    <span class="badge-big">{{ b.emoji }}</span>
+    <div>
+      <b>{{ b.name }}</b>
+      <div class="muted">连续记录 {{ b.days }} 天{% if my_streak >= b.days %} · <span style="color:var(--accent-d)">已获得 ✓</span>{% else %} · 还差 {{ b.remain }} 天{% endif %}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% if user.is_authenticated %}<p class="muted" style="text-align:center">你当前连续记录 <b>{{ my_streak }}</b> 天，继续加油！</p>{% endif %}
+{% endblock %}

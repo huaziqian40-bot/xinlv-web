@@ -1,0 +1,50 @@
+{% extends "manage/base.html" %}
+{% block n_users %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">用户管理</h1>
+<p class="muted">封禁后该用户无法再登录。授予管理员后，对方登录就能进入这个后台。不能操作自己。</p>
+
+<div class="m-card">
+<table class="u-table">
+  <thead>
+    <tr><th>账号</th><th>注册时间</th><th>最近登录</th><th>心情记录</th><th>树洞次数</th><th>状态</th><th>操作</th></tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr class="{% if not row.u.is_active %}u-banned{% endif %}">
+      <td>
+        {{ row.u.username }}
+        {% if row.u.is_superuser %}<span class="u-tag super">站长</span>
+        {% elif row.u.is_staff %}<span class="u-tag admin">管理员</span>{% endif %}
+      </td>
+      <td>{{ row.u.date_joined|date:"Y-m-d" }}</td>
+      <td>{{ row.u.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
+      <td>{{ row.moods }}</td>
+      <td>{{ row.chats }}</td>
+      <td>{% if row.u.is_active %}<span class="u-ok">正常</span>{% else %}<span class="u-bad">已封禁</span>{% endif %}</td>
+      <td class="u-actions">
+        {% if row.u.pk == me.pk %}
+          <span class="muted">（这是你自己）</span>
+        {% elif row.u.is_superuser and not me.is_superuser %}
+          <span class="muted">不可操作</span>
+        {% else %}
+          {% if row.u.is_active %}
+            <form method="post" action="/manage/users/"><input type="hidden" name="id" value="{{ row.u.pk }}"><input type="hidden" name="action" value="ban">{% csrf_token %}<button class="u-btn danger" onclick="return confirm('确定封禁 {{ row.u.username }} 吗？')">封禁</button></form>
+          {% else %}
+            <form method="post" action="/manage/users/"><input type="hidden" name="id" value="{{ row.u.pk }}"><input type="hidden" name="action" value="unban">{% csrf_token %}<button class="u-btn">解封</button></form>
+          {% endif %}
+          {% if row.u.is_staff %}
+            <form method="post" action="/manage/users/"><input type="hidden" name="id" value="{{ row.u.pk }}"><input type="hidden" name="action" value="remove_admin">{% csrf_token %}<button class="u-btn">取消管理员</button></form>
+          {% else %}
+            <form method="post" action="/manage/users/"><input type="hidden" name="id" value="{{ row.u.pk }}"><input type="hidden" name="action" value="make_admin">{% csrf_token %}<button class="u-btn">设为管理员</button></form>
+          {% endif %}
+        {% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7" class="muted">还没有注册用户。</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

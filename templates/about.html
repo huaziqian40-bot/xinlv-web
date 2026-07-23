@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}关于我们{% endblock %}
+{% block nav_about %}active{% endblock %}
+{% block content %}
+<article class="about markdown-body">
+  {{ about_html }}
+</article>
+{% if site.contact_email or site.contact_phone or site.contact_wechat or site.contact_bilibili %}
+<div class="about-contact m-card">
+  <h2>联系我</h2>
+  {% if site.contact_email %}<p>📧 邮箱：{{ site.contact_email }}</p>{% endif %}
+  {% if site.contact_phone %}<p>📱 电话：{{ site.contact_phone }}</p>{% endif %}
+  {% if site.contact_wechat %}<p>💬 微信：{{ site.contact_wechat }}</p>{% endif %}
+  {% if site.contact_bilibili %}<p>📺 B站：<a href="{{ site.contact_bilibili }}" target="_blank" rel="noopener">点击进入我的主页 ↗</a></p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

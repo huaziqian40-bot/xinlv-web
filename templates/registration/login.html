@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}登录{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>登录</h1>
+  <p class="muted">{{ T.login_sub }}</p>
+  {% if form.errors %}<div class="auth-err">账号或密码不对，再试一次。</div>{% endif %}
+  <form method="post" action="/login/">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <input type="text" name="username" placeholder="账号" autofocus required>
+    <input type="password" name="password" placeholder="密码" required>
+    <button class="primary big" type="submit">登录</button>
+  </form>
+  <p class="auth-alt">{{ T.no_account }}<a href="/register/?next={{ next }}">{{ T.go_register }}</a></p>
+</div>
+{% endblock %}

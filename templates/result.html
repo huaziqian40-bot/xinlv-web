@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="result-head" style="--c:{{ rec.info.color }}">
+  <div class="big-emoji">{{ rec.info.emoji }}</div>
+  <h1>{% if date_label %}{{ date_label }}，{% endif %}{{ T.you_feel }}<span style="color:{{ rec.info.color }}">{{ rec.info.label }}</span></h1>
+  {% if note %}<p class="note">“{{ note }}”</p>{% endif %}
+</section>
+
+{% if rec.valence > 0 %}
+  <div class="block">
+    <h2>🌱 {{ T.psych_tip }}</h2>
+    {% for tip in rec.tips %}
+    <div class="tip">
+      <h3>{{ tip.title }}</h3>
+      <p>{{ tip.content }}</p>
+      {% if tip.source %}<span class="src">— {{ tip.source }}</span>{% endif %}
+    </div>
+    {% empty %}
+    <p class="muted">还没有小知识，可在管理后台添加。</p>
+    {% endfor %}
+  </div>
+{% else %}
+  {% if rec.practice %}
+  <div class="block practice">
+    <h2>🌬️ {{ T.try_now }}</h2>
+    <p>{{ rec.practice }}</p>
+  </div>
+  {% endif %}
+  {% if rec.activities %}
+  <div class="block">
+    <h2>🤍 {{ T.gentle_things }}</h2>
+    <ul class="acts">{% for a in rec.activities %}<li>{{ a.text }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+{% endif %}
+
+<div class="block">
+  <h2>🎧 {{ T.listen_awhile }}</h2>
+  {% for s in rec.songs %}
+  <div class="song">
+    <div class="song-info"><strong>{{ s.title }}</strong>{% if s.artist %}<span> · {{ s.artist }}</span>{% endif %}</div>
+    <audio controls preload="none" src="{{ s.audio.url }}"></audio>
+  </div>
+  {% empty %}
+  <p class="muted">音乐库还是空的，可在管理后台上传。</p>
+  {% endfor %}
+</div>
+
+{% if rec.video %}
+<div class="block">
+  <h2>📺 {{ T.recommend_video }}</h2>
+  <div class="bili-card">
+    {% if rec.video.embed_url %}
+    <div class="bili-embed">
+      <iframe src="{{ rec.video.embed_url }}" scrolling="no" frameborder="no"
+              framespacing="0" allowfullscreen="true"></iframe>
+    </div>
+    {% endif %}
+    <div class="bili-title">{{ rec.video.title }}</div>
+    <a class="primary" href="{{ rec.video.url }}" target="_blank" rel="noopener">{{ T.watch_on_bili }} ↗</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="block center">
+  <p>{{ T.talk_to_someone }}</p>
+  <a class="primary big" href="/confidant/">{{ T.go_confidant }}</a>
+  <p style="margin-top:1rem"><a class="muted" href="/">{{ T.back_calendar }}</a></p>
+</div>
+{% endblock %}

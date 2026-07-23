@@ -1,0 +1,47 @@
+{% extends "manage/base.html" %}
+{% block n_site %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">关于我们 / 联系方式</h1>
+<form method="post" action="/manage/site/">
+  {% csrf_token %}
+
+  <div class="m-card">
+    <h2>「关于我们」页面内容</h2>
+    <p class="muted">支持 <b>Markdown</b> 语法：# 标题、**加粗**、- 列表、[链接](网址) 等。右边是实时预览。</p>
+    <div class="md-editor">
+      <textarea name="about_content" id="md-input" rows="16">{{ s.about_content }}</textarea>
+      <div class="md-preview markdown-body" id="md-preview"></div>
+    </div>
+  </div>
+
+  <div class="m-card">
+    <h2>联系方式</h2>
+    <label class="m-field">邮箱<input type="text" name="contact_email" value="{{ s.contact_email }}"></label>
+    <label class="m-field">电话<input type="text" name="contact_phone" value="{{ s.contact_phone }}"></label>
+    <label class="m-field">微信<input type="text" name="contact_wechat" value="{{ s.contact_wechat }}"></label>
+    <label class="m-field">B站主页链接<input type="text" name="contact_bilibili" value="{{ s.contact_bilibili }}" placeholder="https://space.bilibili.com/你的UID"></label>
+    <label class="m-field">危机援助热线<input type="text" name="crisis_hotline" value="{{ s.crisis_hotline }}"></label>
+  </div>
+
+  <div class="m-card">
+    <h2>免责声明内容</h2>
+    <p class="muted">支持 Markdown。<b>留空则使用网站内置的默认中英文条款</b>；填了就用你写的这份。</p>
+    <textarea name="disclaimer_content" rows="12" style="width:100%;font-family:ui-monospace,monospace;font-size:.88rem;border:1.5px solid var(--line);border-radius:10px;padding:.7rem;background:var(--bg)">{{ s.disclaimer_content }}</textarea>
+  </div>
+
+  <button class="primary big" type="submit">保存全部</button>
+</form>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+  const input = document.getElementById('md-input');
+  const preview = document.getElementById('md-preview');
+  function render(){
+    if(window.marked){ preview.innerHTML = marked.parse(input.value || ''); }
+    else { preview.textContent = input.value; }
+  }
+  input.addEventListener('input', render);
+  window.addEventListener('load', render);
+  render();
+</script>
+{% endblock %}

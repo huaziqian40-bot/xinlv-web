@@ -1,0 +1,1 @@
+claude --project . --add-dir .

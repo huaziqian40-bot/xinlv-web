@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+.env
+staticfiles/
+media/music/*
+!media/music/.gitkeep
+logs/
+*.log
+backups/
+beta0.*/
+moodsite*/

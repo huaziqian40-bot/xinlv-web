@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}免责声明 / Disclaimer{% endblock %}
+{% block content %}
+<article class="disclaimer-page m-card">
+  <div class="lang-switch">
+    <button class="ls-btn active" onclick="showLang('zh')" id="ls-zh">中文</button>
+    <button class="ls-btn" onclick="showLang('en')" id="ls-en">English</button>
+  </div>
+
+  <div id="lang-zh">
+    <h1>免责声明</h1>
+    <ol class="disc">
+      <li><strong>非医疗性质声明：</strong>本网站仅作为情绪舒缓与自我探索的辅助工具，旨在为您提供轻量级的心理陪伴与趣味性心理学内容。本网站及其开发者（下称"我方"）绝不提供任何形式的心理咨询、心理治疗或医疗诊断服务。本网站上的所有信息、建议或由人工智能生成的内容，均不能替代专业医师、心理咨询师或精神科医生的面对面诊断与治疗方案。</li>
+      <li><strong>AI 电子树洞使用风险：</strong>本网站内置的"AI 电子树洞"系基于第三方大语言模型技术构建。虽然我们设定了特定的情绪共情指令，但 AI 终究属于非人类程序，其回复内容可能存在偏差、不完整或不完全准确。我们强烈建议您：
+        <ul>
+          <li>切勿将 AI 的建议作为重大人生决策的唯一依据；</li>
+          <li>切勿在对话中透露您的真实姓名、家庭住址、银行账号等敏感个人隐私信息。</li>
+        </ul>
+      </li>
+      <li><strong>紧急状况处理：</strong>如果您正在经历严重的情绪困扰，或出现任何自我伤害、伤害他人的念头，请您立即停止使用本网站，并第一时间联系以下专业援助渠道：
+        <ul>
+          <li>全国 24 小时心理援助热线（希望 24 热线）：<strong>400-161-9995</strong></li>
+          <li>北京心理危机研究与干预中心：<strong>010-82951332</strong></li>
+          <li>如果您身处海外，请立即联系您所在国家的紧急救助热线或学校心理咨询中心。</li>
+        </ul>
+      </li>
+      <li><strong>外部链接与第三方内容：</strong>网站推送的舒缓音乐、视频等可能包含跳转至第三方平台（如 B 站、网易云音乐等）的链接。我方对这些第三方平台的内容、隐私政策及安全性不承担任何责任。</li>
+      <li><strong>未成年人使用条款：</strong>若您未满 18 周岁，请在父母或法定监护人的陪同下使用本网站。本网站的内容设定旨在促进积极心态，但无法取代家庭教育与校方心理辅导教师的关怀。</li>
+      <li><strong>责任豁免：</strong>在法律法规允许的最大范围内，我方不对因使用本网站或依赖其内容而导致的任何直接、间接、偶然或特殊损害（包括但不限于情绪恶化、学业损失或人际关系冲突）承担责任。使用本网站即代表您已阅读、理解并同意本免责声明的全部条款。</li>
+    </ol>
+  </div>
+
+  <div id="lang-en" style="display:none">
+    <h1>Disclaimer</h1>
+    <ol class="disc">
+      <li><strong>Non-Medical Purpose:</strong> This website is designed solely as a supplementary tool for emotional relaxation and self-exploration. It provides lightweight companionship and interesting psychological insights. This website does NOT provide professional psychological counseling, therapy, or medical diagnostic services. All information, suggestions, or AI-generated content on this site cannot replace the diagnosis and treatment provided by licensed physicians, psychologists, or psychiatrists.</li>
+      <li><strong>AI Interaction Risks:</strong> The "AI Digital Tree Hole" is built upon third-party Large Language Models. Despite our efforts to set empathy-driven prompts, the AI is non-human and may generate biased, incomplete, or inaccurate responses. We strongly advise you:
+        <ul>
+          <li>Do not rely on AI suggestions as the sole basis for major life decisions;</li>
+          <li>Do not share personally identifiable information (e.g., real name, address, bank details) during chats.</li>
+        </ul>
+      </li>
+      <li><strong>Emergency Protocol:</strong> If you are experiencing severe emotional distress or having thoughts of self-harm or harming others, please stop using this website immediately and seek help from professional crisis intervention hotlines:
+        <ul>
+          <li>Beijing Crisis Research and Intervention Center: <strong>+86-10-82951332</strong></li>
+          <li>Lifeline Shanghai (English Support): <strong>400-821-1215</strong></li>
+          <li>If you are abroad, please contact your local emergency services or your school's counseling office immediately.</li>
+        </ul>
+      </li>
+      <li><strong>Third-Party Links:</strong> This site may push content linking to external platforms (e.g., Bilibili, Spotify). We are not responsible for the content, privacy policies, or security of these external sites.</li>
+      <li><strong>Minors:</strong> If you are under 18, please use this site under the supervision of a parent or legal guardian. This tool is not a substitute for family communication or school-based psychological support.</li>
+      <li><strong>Limitation of Liability:</strong> To the fullest extent permitted by law, we shall not be liable for any direct, indirect, incidental, or consequential damages arising from the use of or reliance on this website. By using this site, you acknowledge that you have read and agree to this disclaimer.</li>
+    </ol>
+  </div>
+</article>
+
+<script>
+function showLang(l){
+  document.getElementById('lang-zh').style.display = l==='zh'?'block':'none';
+  document.getElementById('lang-en').style.display = l==='en'?'block':'none';
+  document.getElementById('ls-zh').classList.toggle('active', l==='zh');
+  document.getElementById('ls-en').classList.toggle('active', l==='en');
+}
+</script>
+{% endblock %}

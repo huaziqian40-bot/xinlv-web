@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}管理后台{% endblock %} · 心情树洞</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="manage-body">
+  <header class="m-top">
+    <span class="m-logo">🌙 管理后台</span>
+    <div class="m-top-right">
+      <a href="/" class="m-view">← 返回网页端</a>
+      <span class="acc-user">{{ user.username }}</span>
+      <form method="post" action="/logout/" style="display:inline">
+        {% csrf_token %}<button class="m-logout">退出</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="m-wrap">
+    <nav class="m-nav">
+      <a href="/manage/" class="{% block n_home %}{% endblock %}">🏠 概览</a>
+      <a href="/manage/songs/" class="{% block n_songs %}{% endblock %}">🎵 音乐</a>
+      <a href="/manage/tips/" class="{% block n_tips %}{% endblock %}">🌱 心理学小知识</a>
+      <a href="/manage/activities/" class="{% block n_acts %}{% endblock %}">🤍 舒缓建议</a>
+      <a href="/manage/videos/" class="{% block n_videos %}{% endblock %}">📺 推送视频</a>
+      <a href="/manage/site/" class="{% block n_site %}{% endblock %}">📝 关于我们 / 联系方式</a>
+      <a href="/manage/users/" class="{% block n_users %}{% endblock %}">👥 用户管理</a>
+      <a href="/manage/review/" class="{% block n_review %}{% endblock %}">📥 用户投稿复审</a>
+    </nav>
+
+    <main class="m-main">
+      {% if messages %}
+        <div class="m-msgs">
+          {% for m in messages %}<div class="m-msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

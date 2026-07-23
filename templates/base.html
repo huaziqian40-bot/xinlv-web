@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}心情树洞{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="nav-left">
+      <a class="brand" href="/">🌙 心情树洞</a>
+      <nav class="nav-links">
+        <a href="/" class="{% block nav_home %}{% endblock %}">{{ T.nav_calendar }}</a>
+        <a href="/confidant/" class="{% block nav_conf %}{% endblock %}">{{ T.nav_confidant }}</a>
+        <a href="/about/" class="{% block nav_about %}{% endblock %}">{{ T.nav_about }}</a>
+        {% if user.is_authenticated %}<a href="/contribute/" class="{% block nav_contrib %}{% endblock %}">{{ T.nav_contribute }}</a>{% endif %}
+      </nav>
+    </div>
+    <div class="nav-right">
+      <form method="post" action="/set-language/" class="lang-form">
+        {% csrf_token %}
+        <button name="lang" value="{% if LANG == 'en' %}zh{% else %}en{% endif %}" class="lang-btn">
+          {% if LANG == 'en' %}中文{% else %}EN{% endif %}
+        </button>
+      </form>
+      {% if user.is_authenticated %}
+        {% if user.is_staff %}<a class="acc-link" href="/manage/">{{ T.manage }}</a>{% endif %}
+        <a class="acc-link" href="/me/">{{ T.my_home }}</a>
+        <span class="acc-user">{{ T.hello }}{{ user.username }}</span>
+        <form method="post" action="/logout/" class="logout-inline">
+          {% csrf_token %}<button class="acc-btn ghost">{{ T.logout }}</button>
+        </form>
+      {% else %}
+        <a class="acc-link" href="/login/?next={{ request.path }}">{{ T.login }}</a>
+        <a class="acc-btn" href="/register/?next={{ request.path }}">{{ T.register }}</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- 手机端底部图标导航栏（桌面端隐藏） -->
+  <nav class="mobile-tabbar">
+    <a href="/" class="{% block tab_home %}{% endblock %}"><span class="ic">📅</span><span class="tb">{{ T.nav_calendar }}</span></a>
+    <a href="/confidant/" class="{% block tab_conf %}{% endblock %}"><span class="ic">🌙</span><span class="tb">{{ T.nav_confidant }}</span></a>
+    {% if user.is_authenticated %}<a href="/contribute/" class="{% block tab_contrib %}{% endblock %}"><span class="ic">✍️</span><span class="tb">{{ T.nav_contribute }}</span></a>
+    <a href="/me/" class="{% block tab_me %}{% endblock %}"><span class="ic">👤</span><span class="tb">{{ T.my_home }}</span></a>{% else %}
+    <a href="/about/" class="{% block tab_about %}{% endblock %}"><span class="ic">ℹ️</span><span class="tb">{{ T.nav_about }}</span></a>{% endif %}
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="foot">
+    <div class="foot-contact">
+      <strong>{{ T.contact_us }}</strong>
+      {% if site.contact_email %}<span>邮箱：{{ site.contact_email }}</span>{% endif %}
+      {% if site.contact_phone %}<span>电话：{{ site.contact_phone }}</span>{% endif %}
+      {% if site.contact_wechat %}<span>微信：{{ site.contact_wechat }}</span>{% endif %}
+      {% if site.contact_bilibili %}<span>B站：<a href="{{ site.contact_bilibili }}" target="_blank" rel="noopener">点击进入主页 ↗</a></span>{% endif %}
+    </div>
+    <p>{{ T.foot_slogan }} &nbsp;|&nbsp; {{ T.foot_disclaimer }} &nbsp;<a href="/disclaimer/">{{ T.disclaimer_link }}</a></p>
+    <p class="crisis">{{ T.crisis_note_1 }}
+      <strong>{{ site.crisis_hotline|default:"12356" }}</strong>{{ T.crisis_note_2 }}</p>
+  </footer>
+  {% block script %}{% endblock %}
+</body>
+</html>

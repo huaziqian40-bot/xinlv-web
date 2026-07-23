@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block nav_conf %}active{% endblock %}
+{% block content %}
+<section class="conf-head">
+  <h1>🌙 {{ T.confidant_title }}</h1>
+  <p>{{ T.confidant_sub }}</p>
+</section>
+
+<div class="chat" id="chat">
+  {% for m in history %}
+    <div class="bubble {{ m.role }}">{{ m.content }}</div>
+  {% empty %}
+    <div class="bubble assistant">{{ T.confidant_hello }}</div>
+  {% endfor %}
+</div>
+
+<div class="conf-banner" id="stop-banner" style="display:none">
+  为了你的安全，本次对话已暂停。请优先使用下面窗口里的求助方式。如需重新开始，可点「{{ T.clear_chat }}」。
+</div>
+
+<div class="composer">
+  <textarea id="input" rows="1" placeholder="{{ T.input_placeholder }}"></textarea>
+  <button id="send" class="primary">{{ T.send }}</button>
+</div>
+<div class="conf-tools">
+  <button id="speak-toggle" class="link">🔊 {{ T.read_reply }}：{{ T.off }}</button>
+  <button id="clear" class="link">{{ T.clear_chat }}</button>
+</div>
+
+<!-- 危机求助弹窗 -->
+<div class="crisis-bg" id="crisis-modal">
+  <div class="crisis-card">
+    <div class="crisis-emoji">🫂</div>
+    <h2>你的安全最重要</h2>
+    <p>我能感觉到你正经历很深的痛苦。这不是聊天能够承接的，请现在就联系下面的求助方式，或告诉一个你信任的人。</p>
+    <div class="crisis-lines">
+      <a class="crisis-line" href="tel:{{ site.crisis_hotline|default:'12356' }}">
+        <span class="cl-label">心理援助热线</span><span class="cl-num">{{ site.crisis_hotline|default:"12356" }}</span></a>
+      <a class="crisis-line urgent" href="tel:110">
+        <span class="cl-label">报警电话</span><span class="cl-num">110</span></a>
+      <a class="crisis-line urgent" href="tel:120">
+        <span class="cl-label">急救电话</span><span class="cl-num">120</span></a>
+    </div>
+    <p class="crisis-note">如果你或身边的人有立即的危险，请马上拨打 110 或前往最近的医院。你值得被好好对待。</p>
+    <button class="primary big" id="crisis-ok">我知道了</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const speakBtn = document.getElementById('speak-toggle');
+let speakOn = false;
+let stopped = false;
+
+function getCookie(name){
+  const m = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');
+  return m ? m.pop() : '';
+}
+function addBubble(text, role){
+  const d = document.createElement('div');
+  d.className = 'bubble ' + role;
+  d.textContent = text;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+
+// ---- 语音输出（朗读）：优先用服务器端火山语音（真人感），失败再退回浏览器自带 ----
+let ttsAudio = null;
+function browserSpeak(text){
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+async function speak(text){
+  if(!speakOn || !text) return;
+  try{
+    const r = await fetch('/confidant/tts/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+      body: JSON.stringify({text})
+    });
+    const data = await r.json();
+    if(data.audio){
+      if(ttsAudio){ ttsAudio.pause(); }
+      ttsAudio = new Audio('data:audio/mp3;base64,' + data.audio);
+      ttsAudio.play().catch(()=>browserSpeak(text));
+      return;
+    }
+  }catch(e){ /* 网络问题，走兜底 */ }
+  browserSpeak(text);   // 未配置火山语音或失败时的兜底
+}
+function stopSpeaking(){
+  if(ttsAudio){ ttsAudio.pause(); ttsAudio = null; }
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+}
+speakBtn.onclick = ()=>{
+  speakOn = !speakOn;
+  speakBtn.textContent = '🔊 朗读回复：' + (speakOn ? '开' : '关');
+  if(!speakOn) stopSpeaking();
+};
+
+// ---- 语音输入已移除 ----
+
+// ---- 强制停止 ----
+function forceStop(){
+  stopped = true;
+  input.disabled = true; sendBtn.disabled = true;
+  document.getElementById('stop-banner').style.display = 'block';
+  document.getElementById('crisis-modal').classList.add('show');
+}
+document.getElementById('crisis-ok').onclick = ()=>{
+  document.getElementById('crisis-modal').classList.remove('show');
+};
+
+// ---- 发送 ----
+async function send(){
+  if(stopped) return;
+  const text = input.value.trim();
+  if(!text) return;
+  input.value=''; input.style.height='auto';
+  addBubble(text, 'user');
+  sendBtn.disabled = true;
+  const typing = addBubble('……', 'assistant typing');
+  try{
+    const r = await fetch('/confidant/send/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+      body: JSON.stringify({message:text})
+    });
+    const data = await r.json();
+    typing.remove();
+    const reply = data.reply || data.error || '（没有收到回复）';
+    addBubble(reply, 'assistant');
+    speak(reply);
+    if(data.crisis){ forceStop(); }
+  }catch(e){
+    typing.remove();
+    addBubble('（网络出了点问题，稍后再试试）', 'assistant');
+  }
+  if(!stopped){ sendBtn.disabled = false; input.focus(); }
+}
+sendBtn.onclick = send;
+input.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+});
+input.addEventListener('input', ()=>{ input.style.height='auto'; input.style.height=input.scrollHeight+'px'; });
+
+document.getElementById('clear').onclick = async ()=>{
+  if(!confirm('确定清空这段对话吗？')) return;
+  await fetch('/confidant/clear/', {method:'POST', headers:{'X-CSRFToken':getCookie('csrftoken')}});
+  chat.innerHTML = '<div class="bubble assistant">好的，我们从头开始。最近怎么样？</div>';
+  stopped = false;
+  input.disabled = false; sendBtn.disabled = false;
+  document.getElementById('stop-banner').style.display = 'none';
+};
+chat.scrollTop = chat.scrollHeight;
+</script>
+{% endblock %}

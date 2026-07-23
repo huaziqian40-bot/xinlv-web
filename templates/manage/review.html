@@ -1,0 +1,23 @@
+{% extends "manage/base.html" %}
+{% block content %}
+<h1 class="m-h1">用户投稿复审</h1>
+<p class="muted">这些是 AI 没能自动通过、需要你人工判断的投稿。</p>
+<div class="m-card">
+  {% for c in pending %}
+  <div class="rv-row">
+    <div class="rv-info">
+      <span class="sub-kind">{{ c.get_kind_display }}</span>
+      <b>{{ c.title|default:"（无标题）" }}</b> · <span class="muted">by {{ c.user.username }}</span>
+      <div class="rv-content">{{ c.content }}</div>
+      {% if c.source %}<div class="muted" style="font-size:.82rem">出处：{{ c.source }}</div>{% endif %}
+      {% if c.moods %}<div class="muted" style="font-size:.82rem">情绪：{{ c.moods }}</div>{% endif %}
+      {% if c.ai_reason %}<div class="rv-ai">AI 意见：{{ c.ai_reason }}</div>{% endif %}
+    </div>
+    <div class="rv-actions">
+      <form method="post" action="/manage/review/"><input type="hidden" name="id" value="{{ c.pk }}"><input type="hidden" name="action" value="approve">{% csrf_token %}<button class="u-btn">通过</button></form>
+      <form method="post" action="/manage/review/"><input type="hidden" name="id" value="{{ c.pk }}"><input type="hidden" name="action" value="reject">{% csrf_token %}<button class="u-btn danger">拒绝</button></form>
+    </div>
+  </div>
+  {% empty %}<p class="muted">暂无待复审的投稿。</p>{% endfor %}
+</div>
+{% endblock %}

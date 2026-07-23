@@ -1,0 +1,37 @@
+{% extends "manage/base.html" %}
+{% block n_acts %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">🤍 舒缓建议</h1>
+<p class="muted">访客记录"负面心情"时，会看到这些温柔的小事建议。</p>
+
+<div class="m-card">
+  <h2>添加一条</h2>
+  <form method="post" class="up-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <textarea name="text" rows="2" placeholder="建议内容，例如「出门散步 15 分钟，专注感受呼吸」" required></textarea>
+    <p class="field-label">适合哪些心情？（不选 = 所有心情通用）</p>
+    <div class="mood-checks">
+      {% for k,label,emoji,color,val in moods %}
+      <label class="mc"><input type="checkbox" name="moods" value="{{ k }}"> {{ emoji }} {{ label }}</label>
+      {% endfor %}
+    </div>
+    <button class="primary" type="submit">添加</button>
+  </form>
+</div>
+
+<div class="m-card">
+  <h2>已有的（{{ activities|length }} 条）</h2>
+  {% for a in activities %}
+  <div class="item-row">
+    <div><strong>{{ a.text }}</strong>{% if a.moods %}<br><span class="src">心情：{{ a.moods }}</span>{% endif %}</div>
+    <form method="post" onsubmit="return confirm('删除这条建议？')">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="id" value="{{ a.id }}">
+      <button class="danger small" type="submit">删除</button>
+    </form>
+  </div>
+  {% empty %}<p class="muted">还没有内容。</p>{% endfor %}
+</div>
+{% endblock %}

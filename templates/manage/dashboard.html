@@ -1,0 +1,29 @@
+{% extends "manage/base.html" %}
+{% block n_home %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">概览</h1>
+<p class="muted">这里能管理网站的内容和用户。改完不用重启，访客刷新就能看到。</p>
+
+<div class="stat-grid">
+  <div class="stat"><div class="num">{{ n_users }}</div><div class="lbl">注册用户</div></div>
+  <div class="stat"><div class="num">{{ n_songs }}</div><div class="lbl">首音乐</div></div>
+  <div class="stat"><div class="num">{{ n_tips }}</div><div class="lbl">条小知识</div></div>
+  <div class="stat"><div class="num">{{ n_acts }}</div><div class="lbl">条舒缓建议</div></div>
+  <div class="stat"><div class="num">{{ n_moods }}</div><div class="lbl">条心情记录</div></div>
+  <div class="stat"><div class="num">{{ n_videos }}</div><div class="lbl">个推送视频</div></div>
+  <div class="stat"><div class="num">{{ n_chats }}</div><div class="lbl">次树洞倾诉</div></div>
+</div>
+
+<div class="m-card">
+  <h2>常用操作</h2>
+  <div class="quick-links">
+    <a href="/manage/songs/">🎵 上传 / 管理音乐</a>
+    <a href="/manage/tips/">🌱 添加心理学小知识</a>
+    <a href="/manage/activities/">🤍 添加舒缓建议</a>
+    <a href="/manage/videos/">📺 管理推送视频</a>
+    <a href="/manage/site/">📝 编辑关于我们 / 联系方式</a>
+    <a href="/manage/users/">👥 管理用户</a>
+    <a href="/manage/review/">📥 用户投稿复审{% if n_review %}（{{ n_review }} 条待处理）{% endif %}</a>
+  </div>
+</div>
+{% endblock %}

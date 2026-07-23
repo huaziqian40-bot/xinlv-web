@@ -1,0 +1,60 @@
+{% extends "manage/base.html" %}
+{% block n_songs %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">🎵 音乐</h1>
+
+<div class="m-card">
+  <h2>上传一首歌</h2>
+  <form method="post" enctype="multipart/form-data" class="up-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <label class="file-label">
+      <span>选择音频文件</span>
+      <input type="file" name="audio" accept="audio/*" required>
+    </label>
+    <div class="row2">
+      <input type="text" name="title" placeholder="歌名（留空就用文件名）">
+      <input type="text" name="artist" placeholder="歌手（可不填）">
+    </div>
+    <p class="field-label">这首歌适合哪些心情？（不选 = 所有心情都可能推荐）</p>
+    <div class="mood-checks">
+      {% for k,label,emoji,color,val in moods %}
+      <label class="mc"><input type="checkbox" name="moods" value="{{ k }}"> {{ emoji }} {{ label }}</label>
+      {% endfor %}
+    </div>
+    <button class="primary" type="submit">上传</button>
+  </form>
+</div>
+
+<div class="m-card">
+  <h2>已有的歌（{{ songs|length }} 首）</h2>
+  {% for s in songs %}
+  <div class="song-row">
+    <form method="post" class="song-edit" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update">
+      <input type="hidden" name="id" value="{{ s.id }}">
+      <div class="row2">
+        <input type="text" name="title" value="{{ s.title }}">
+        <input type="text" name="artist" value="{{ s.artist }}" placeholder="歌手">
+      </div>
+      <audio controls preload="none" src="{{ s.audio.url }}"></audio>
+      <div class="mood-checks small">
+        {% for k,label,emoji,color,val in moods %}
+        <label class="mc"><input type="checkbox" name="moods" value="{{ k }}" {% if k in s.moods %}checked{% endif %}> {{ emoji }} {{ label }}</label>
+        {% endfor %}
+      </div>
+      <button class="ghost small" type="submit">保存修改</button>
+    </form>
+    <form method="post" onsubmit="return confirm('确定删除《{{ s.title }}》吗？文件也会一起删掉。')">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="id" value="{{ s.id }}">
+      <button class="danger small" type="submit">删除</button>
+    </form>
+  </div>
+  {% empty %}
+  <p class="muted">还没有歌。用上面的表单上传第一首吧。</p>
+  {% endfor %}
+</div>
+{% endblock %}

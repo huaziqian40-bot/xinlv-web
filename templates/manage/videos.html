@@ -1,0 +1,41 @@
+{% extends "manage/base.html" %}
+{% block n_videos %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">推送视频</h1>
+<p class="muted">用户记录完心情后，推荐页会推一个 B 站视频（优先匹配心情标签）。把视频链接粘进来即可。</p>
+
+<div class="m-card">
+  <h2>添加视频</h2>
+  <form method="post" action="/manage/videos/">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <label class="m-field">标题<input type="text" name="title" required></label>
+    <label class="m-field">B站链接<input type="text" name="url" placeholder="https://www.bilibili.com/video/BV..." required></label>
+    <div class="m-field">适用心情（不选=所有心情都可能推）
+      <div class="mood-checks">
+        {% for key,label,emoji,color,val in moods %}
+        <label class="mc"><input type="checkbox" name="moods" value="{{ key }}"> {{ emoji }}{{ label }}</label>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="primary" type="submit">添加</button>
+  </form>
+</div>
+
+<div class="m-card">
+  <h2>已添加（{{ videos|length }}）</h2>
+  {% for v in videos %}
+  <div class="v-row">
+    <div>
+      <strong>{{ v.title }}</strong>
+      <div class="muted" style="font-size:.82rem">{{ v.url }}{% if not v.bvid %}　⚠️ 没识别到 BV 号，无法内嵌播放，只能跳转{% endif %}</div>
+      {% if v.mood_list %}<div class="v-tags">心情：{{ v.moods }}</div>{% endif %}
+    </div>
+    <form method="post" action="/manage/videos/" onsubmit="return confirm('删除这个视频？')">
+      {% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ v.pk }}">
+      <button class="u-btn danger">删除</button>
+    </form>
+  </div>
+  {% empty %}<p class="muted">还没有视频。</p>{% endfor %}
+</div>
+{% endblock %}

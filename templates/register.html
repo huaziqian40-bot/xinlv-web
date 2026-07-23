@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}注册{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>注册</h1>
+  <p class="muted">{{ T.register_sub }}</p>
+  {% if error %}<div class="auth-err">{{ error }}</div>{% endif %}
+  <form method="post" action="/register/">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <input type="text" name="username" placeholder="账号" value="{{ username|default:'' }}" autofocus required>
+    <input type="password" name="password1" placeholder="密码（至少 6 位）" required>
+    <input type="password" name="password2" placeholder="再输一次密码" required>
+    <label class="agree-line">
+      <input type="checkbox" name="agree" id="agree">
+      <span>我已阅读并同意 <a href="/disclaimer/" target="_blank">《免责声明》</a></span>
+    </label>
+    <button class="primary big" type="submit">{{ T.register_and_login }}</button>
+  </form>
+  <p class="auth-alt">{{ T.have_account }}<a href="/login/?next={{ next }}">{{ T.go_login }}</a></p>
+</div>
+{% endblock %}
