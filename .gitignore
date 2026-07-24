@@ -6,9 +6,10 @@ db.sqlite3
 staticfiles/
 media/music/*
 !media/music/.gitkeep
+media/avatars/*
+!media/avatars/.gitkeep
+media/user_music/*
+!media/user_music/.gitkeep
 logs/
 *.log
 backups/
-_recovered/
-beta0.*/
-moodsite*/
