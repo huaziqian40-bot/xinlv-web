@@ -271,6 +271,11 @@ def disclaimer(request):
     return render(request, "disclaimer.html", {"custom_html": custom_html})
 
 
+def game(request):
+    """情绪小西瓜：仿合成大西瓜的放松小游戏，纯前端 Canvas 实现，不涉及数据存储。"""
+    return render(request, "game.html")
+
+
 def about(request):
     s = SiteSettings.load()
     html = md.markdown(s.about_content or "", extensions=["extra", "nl2br", "sane_lists"])

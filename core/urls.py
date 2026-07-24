@@ -5,6 +5,7 @@ from . import views, admin_views, auth_views as my_auth, feature_views
 urlpatterns = [
     path("", views.home, name="home"),
     path("save/", views.save_mood, name="save_mood"),
+    path("game/", views.game, name="game"),
     path("day/", views.day_entries, name="day_entries"),
     path("calendar-data/", views.calendar_data, name="calendar_data"),
 

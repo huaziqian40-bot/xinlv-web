@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}情绪小西瓜 · 放松一下{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>🍉 情绪小西瓜</h1>
+  <p>心里有点乱？来合几颗水果，什么都不用想一会儿。</p>
+</section>
+
+<div class="game-wrap">
+  <div class="game-panel">
+    <div class="game-hud">
+      <div class="hud-item">分数<br><b id="g-score">0</b></div>
+      <div class="hud-item">最高分<br><b id="g-best">0</b></div>
+      <button class="u-btn" id="g-restart">🔄 重来</button>
+    </div>
+    <div class="game-stage-wrap">
+      <canvas id="g-canvas" width="360" height="520"></canvas>
+      <div id="g-over" class="game-over" style="display:none">
+        <div>
+          <p>游戏结束啦</p>
+          <p class="muted">本局得分：<b id="g-final">0</b></p>
+          <button class="primary" id="g-retry">再来一局</button>
+        </div>
+      </div>
+    </div>
+    <p class="game-hint">点击 / 触摸移动位置，松手或再点一下落下水果。相同水果碰到一起会合成更大的哦～</p>
+  </div>
+
+  <div class="game-guide">
+    <h3>合成顺序</h3>
+    <div class="fruit-chain" id="fruit-chain"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const cv = document.getElementById('g-canvas');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
+  // 十一级水果：半径、颜色、emoji、分值（合成一次得该级分）
+  const FRUITS = [
+    {r:14, color:'#e7a3b8', emoji:'🍇', name:'葡萄',   score:1},
+    {r:19, color:'#e78b8b', emoji:'🍒', name:'樱桃',   score:3},
+    {r:25, color:'#f2b6a0', emoji:'🍑', name:'草莓',   score:6},
+    {r:32, color:'#f0d27a', emoji:'🍋', name:'金橘',   score:10},
+    {r:40, color:'#f2c14e', emoji:'🍊', name:'橙子',   score:15},
+    {r:49, color:'#e7623e', emoji:'🍎', name:'苹果',   score:21},
+    {r:59, color:'#f5deb3', emoji:'🍐', name:'雪梨',   score:28},
+    {r:70, color:'#f4a94c', emoji:'🍑', name:'水蜜桃', score:36},
+    {r:82, color:'#f7e07a', emoji:'🍍', name:'菠萝',   score:45},
+    {r:96, color:'#c2e07a', emoji:'🍈', name:'哈密瓜', score:55},
+    {r:112,color:'#6fae5c', emoji:'🍉', name:'大西瓜', score:66},
+  ];
+  const LOSE_LINE = 70;      // 顶部警戒线：水果静止后越过此线即判负
+  const GRAVITY = 0.35;
+  const DAMPING = 0.994;
+  const WALL_BOUNCE = 0.35;
+  const MERGE_BOOST = 1.06;  // 合成一瞬间轻微弹出手感
+
+  let balls = [];
+  let idc = 0;
+  let score = 0;
+  let best = parseInt(localStorage.getItem('watermelon_best') || '0', 10);
+  let dropping = null;   // 当前待落下的水果 {x, level}
+  let dropReady = true;
+  let over = false;
+  let dangerSince = null; // 越线开始计时（避免瞬间碰线就判负）
+
+  document.getElementById('g-best').textContent = best;
+
+  function randomLevel(){
+    // 只从前5级里随机生成，太大直接掉落不好玩
+    return Math.floor(Math.random() * 5);
+  }
+
+  function newDropping(){
+    dropping = {x: W/2, level: randomLevel()};
+    dropReady = true;
+  }
+
+  function spawnBall(x, y, level, vx=0, vy=0){
+    const f = FRUITS[level];
+    balls.push({id: idc++, x, y, vx, vy, r: f.r, level, scale: 1});
+  }
+
+  function resetGame(){
+    balls = []; score = 0; over = false; dangerSince = null;
+    document.getElementById('g-score').textContent = 0;
+    document.getElementById('g-over').style.display = 'none';
+    newDropping();
+  }
+
+  // ---- 输入：移动待落水果 + 点击/松手落下 ----
+  function pointerX(e){
+    const rect = cv.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    return (clientX - rect.left) * (W / rect.width);
+  }
+  cv.addEventListener('mousemove', e=>{
+    if(!dropping || over) return;
+    const r = FRUITS[dropping.level].r;
+    dropping.x = Math.max(r, Math.min(W - r, pointerX(e)));
+  });
+  cv.addEventListener('touchmove', e=>{
+    if(!dropping || over) return;
+    e.preventDefault();
+    const r = FRUITS[dropping.level].r;
+    dropping.x = Math.max(r, Math.min(W - r, pointerX(e)));
+  }, {passive:false});
+
+  function doDrop(){
+    if(!dropping || !dropReady || over) return;
+    spawnBall(dropping.x, FRUITS[dropping.level].r + 4, dropping.level);
+    dropReady = false;
+    setTimeout(newDropping, 420); // 短暂冷却，防止连点狂刷
+  }
+  cv.addEventListener('click', doDrop);
+  cv.addEventListener('touchend', e=>{ e.preventDefault(); doDrop(); }, {passive:false});
+
+  document.getElementById('g-restart').onclick = resetGame;
+  document.getElementById('g-retry').onclick = resetGame;
+
+  // ---- 物理更新：重力 + 圆形碰撞 + 合成 ----
+  function update(){
+    for(const b of balls){
+      b.vy += GRAVITY;
+      b.x += b.vx; b.y += b.vy;
+      b.vx *= DAMPING; b.vy *= DAMPING;
+      if(b.scale < 1) b.scale = Math.min(1, b.scale + 0.08);
+
+      // 墙壁与地板
+      if(b.x - b.r < 0){ b.x = b.r; b.vx *= -WALL_BOUNCE; }
+      if(b.x + b.r > W){ b.x = W - b.r; b.vx *= -WALL_BOUNCE; }
+      if(b.y + b.r > H){ b.y = H - b.r; b.vy *= -WALL_BOUNCE; if(Math.abs(b.vy)<0.6) b.vy=0; }
+    }
+
+    // 碰撞检测 + 分离 + 合成（合成延后到本帧末尾统一处理，避免遍历中改数组出错）
+    const toMerge = [];
+    const removed = new Set();
+    for(let i=0;i<balls.length;i++){
+      for(let j=i+1;j<balls.length;j++){
+        const a=balls[i], b=balls[j];
+        if(removed.has(a.id)||removed.has(b.id)) continue;
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist=Math.hypot(dx,dy) || 0.001;
+        const minDist=a.r+b.r;
+        if(dist < minDist){
+          if(a.level===b.level && a.level < FRUITS.length-1){
+            toMerge.push([a,b]);
+            removed.add(a.id); removed.add(b.id);
+            continue;
+          }
+          // 分离（弹性挤开，避免重叠穿模）
+          const overlap = (minDist - dist) / 2;
+          const nx=dx/dist, ny=dy/dist;
+          a.x -= nx*overlap; a.y -= ny*overlap;
+          b.x += nx*overlap; b.y += ny*overlap;
+          const damp=0.5;
+          a.vx -= nx*overlap*damp; a.vy -= ny*overlap*damp;
+          b.vx += nx*overlap*damp; b.vy += ny*overlap*damp;
+        }
+      }
+    }
+    if(toMerge.length){
+      for(const [a,b] of toMerge){
+        const level = a.level+1;
+        const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+        spawnBall(mx, my, level);
+        const nb = balls[balls.length-1];
+        nb.scale = 0.7; // 合成弹出动画起点
+        score += FRUITS[level].score;
+      }
+      balls = balls.filter(b=>!removed.has(b.id));
+      document.getElementById('g-score').textContent = score;
+      if(score > best){ best = score; localStorage.setItem('watermelon_best', best); document.getElementById('g-best').textContent = best; }
+    }
+
+    // 判负：有水果静止且顶部越过警戒线，持续超过 1 秒
+    let danger = false;
+    for(const b of balls){
+      if(b.y - b.r < LOSE_LINE && Math.abs(b.vy) < 0.5 && b.y < H*0.6){ danger = true; break; }
+    }
+    if(danger){
+      if(dangerSince===null) dangerSince = performance.now();
+      else if(performance.now() - dangerSince > 1000){ endGame(); }
+    } else {
+      dangerSince = null;
+    }
+  }
+
+  function endGame(){
+    if(over) return;
+    over = true;
+    document.getElementById('g-final').textContent = score;
+    document.getElementById('g-over').style.display = 'flex';
+  }
+
+  // ---- 绘制 ----
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // 背景
+    ctx.fillStyle = '#faf8f5';
+    ctx.fillRect(0,0,W,H);
+    // 警戒线
+    ctx.strokeStyle = 'rgba(220,120,120,.5)';
+    ctx.setLineDash([6,6]);
+    ctx.beginPath(); ctx.moveTo(0,LOSE_LINE); ctx.lineTo(W,LOSE_LINE); ctx.stroke();
+    ctx.setLineDash([]);
+
+    for(const b of balls) drawFruit(b.x,b.y,b.r*b.scale,b.level);
+
+    if(dropping && dropReady && !over){
+      const f = FRUITS[dropping.level];
+      ctx.globalAlpha = 0.85;
+      drawFruit(dropping.x, f.r+4, f.r, dropping.level);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawFruit(x,y,r,level){
+    const f = FRUITS[level];
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle = f.color;
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(0,0,0,.06)';
+    ctx.stroke();
+    ctx.font = `${Math.max(12, r*1.1)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(f.emoji, x, y+1);
+  }
+
+  function loop(){
+    if(!over) update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // 合成顺序展示
+  const chainEl = document.getElementById('fruit-chain');
+  chainEl.innerHTML = FRUITS.map(f=>`<span class="fc-item" title="${f.name}">${f.emoji}</span>`).join('<span class="fc-arrow">→</span>');
+
+  resetGame();
+  loop();
+})();
+</script>
+{% endblock %}

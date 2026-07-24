@@ -4,7 +4,7 @@ STRINGS = {
     "zh": {
         # 导航 / 账号
         "nav_calendar": "心情日历", "nav_confidant": "AI 树洞", "nav_about": "关于我们",
-        "nav_contribute": "我要分享", "login": "登录", "register": "注册", "logout": "退出",
+        "nav_contribute": "我要分享", "nav_game": "小游戏", "login": "登录", "register": "注册", "logout": "退出",
         "my_home": "我的主页", "manage": "管理后台", "hello": "你好，",
         # 页脚
         "contact_us": "联系我们", "email": "邮箱", "phone": "电话", "wechat": "微信",
@@ -60,7 +60,7 @@ STRINGS = {
     },
     "en": {
         "nav_calendar": "Calendar", "nav_confidant": "AI Tree Hole", "nav_about": "About",
-        "nav_contribute": "Share", "login": "Log in", "register": "Sign up", "logout": "Log out",
+        "nav_contribute": "Share", "nav_game": "Game", "login": "Log in", "register": "Sign up", "logout": "Log out",
         "my_home": "My Page", "manage": "Admin", "hello": "Hi, ",
         "contact_us": "Contact us", "email": "Email", "phone": "Phone", "wechat": "WeChat",
         "foot_slogan": "Track feelings · Listen to yourself",

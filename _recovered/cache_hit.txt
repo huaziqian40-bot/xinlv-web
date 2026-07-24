@@ -1,0 +1,72 @@
+文件头hex: 0a3c21444f43545950452068746d6c3e0a3c6874
+=== 命中 b'calendar-data' @ 23870 ===
+Notice(document.getElementById('pane-week').querySelector('#week-grid')||grid); return; }
+    grid.innerHTML = '<p class="muted" style="padding:1rem">加载中…</p>';
+    const data = await fetch('/calendar-data/?scope=week&date=' + isoOf(weekAnchor)).then(r=>r.json());
+    document.getElementById('week-title').textContent = data.monday + ' 这周';
+    const labels = ['一','二','三','四','五','六','日'];
+    let html = '<div class="wk-col wk-axis"><div class="wk-dayhead"></div>';
+    for(let h=0; h<24; h+=3) html += `<div class="wk-hour">${h}:00</div>`;
+    html += '</div>';
+    data.days.forEach((iso, i)=>{
+      const [Y,M,D] = iso.split('-');
+      const items = data.entries[iso
+=== 命中 b'"mood"' @ 14381 ===
+div id="add-label" class="add-label" style="display:none">再记一条 ↓</div>
+    <div class="mood-grid">
+      
+      <label class="mood-opt" style="--c:#FFD56B">
+        <input type="radio" name="mood" value="happy" required>
+        <span class="me">😄</span>
+        <span class="ml">开心</span>
+      </label>
+      
+      <label class="mood-opt" style="--c:#9BD1C6">
+        <input type="radio" name="mood" value="calm" required>
+        <span class="me">🙂</span>
+        <span class="ml">平静</span>
+      </label>
+      
+      <label class="mood-opt" style="--c:#FF9F68">
+        <input type="radio" name="mood" value="excited" required>
+        <span class="me">🤩</span>
+     
+=== 命中 b'\xe5\xbf\x83\xe6\x83\x85' @ 151 ===
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心情树洞</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="nav-left">
+      <a class="brand" href="/">🌙 心情树洞</a>
+      <nav class="nav-links">
+        <a href="/" class="active">心情日历</a>
+        <a href="/confidant/" class="">AI 树洞</a>
+        <a href="/about/" class="">关于我们</a>
+        <a href="/contribute/" class="">我要分享</a>
+      </nav>
+    </div>
+    <div class="nav-right">
+      
+=== 命中 b'minutes' @ 24631 ===
+ onclick="openMood('${iso}')">`;
+      html += `<div class="wk-dayhead">${labels[i]}<br><b>${+D}</b></div>`;
+      html += `<div class="wk-track">`;
+      items.forEach(e=>{
+        const topPct = (e.minutes / 1440) * 100;
+        html += `<div class="wk-dot" style="top:${topPct}%;border-color:${e.color}" title="${e.time} ${e.label}${e.note?(' · '+e.note):''}">${e.emoji}</div>`;
+      });
+      html += `</div></div>`;
+    });
+    grid.innerHTML = html;
+  }
+  document.getElementById('week-prev').onclick = ()=>{ weekAnchor.setDate(weekAnchor.getDate()-7); renderWeek(); };
+  document.getElementById('week-next').onclick = ()=>{ weekAnchor.setDate(weekAnchor.getDate()+7); renderWeek(); };
+
+  // 

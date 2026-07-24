@@ -1,0 +1,84 @@
+页面中的日期字符串: 2026-07-01, 2026-07-02, 2026-07-03, 2026-07-04, 2026-07-05, 2026-07-06, 2026-07-07, 2026-07-08, 2026-07-09, 2026-07-10, 2026-07-11, 2026-07-12, 2026-07-13, 2026-07-14, 2026-07-15, 2026-07-16, 2026-07-17, 2026-07-18, 2026-07-19, 2026-07-20, 2026-07-21, 2026-07-22, 2026-07-23, 2026-07-24, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, 2026-07-30, 2026-07-31
+=== pane-month 区域 ===
+pane-month">
+    <div class="cal-head">
+      <a class="nav-btn" href="?y=2026&m=6">‹</a>
+      <h2>2026年7月</h2>
+      <a class="nav-btn" href="?y=2026&m=8">›</a>
+    </div>
+    <div class="cal-grid cal-weekdays">
+      <div class="wd">一</div><div class="wd">二</div><div class="wd">三</div><div class="wd">四</div><div class="wd">五</div><div class="wd">六</div><div class="wd">日</div>
+    </div>
+    <div class="cal-grid">
+      
+        <div class="day empty"></div>
+      
+        <div class="day empty"></div>
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-01"
+                  onclick="openMood('2026-07-01')"
+                  style="background:#FFD56B22;border-color:#FFD56B">
+            <span class="dnum">1</span>
+            <span class="demoji">😄</span>
+          </button>
+        
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-02"
+                  onclick="openMood('2026-07-02')"
+                  style="background:#A6A6C922;border-color:#A6A6C9">
+            <span class="dnum">2</span>
+            <span class="demoji">😪</span>
+          </button>
+        
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-03"
+                  onclick="openMood('2026-07-03')"
+                  style="background:#FF9F6822;border-color:#FF9F68">
+            <span class="dnum">3</span>
+            <span class="demoji">🤩</span>
+          </button>
+        
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-04"
+                  onclick="openMood('2026-07-04')"
+                  >
+            <span class="dnum">4</span>
+            <span class="demoji"></span>
+          </button>
+        
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-05"
+                  onclick="openMood('2026-07-05')"
+                  >
+            <span class="dnum">5</span>
+            <span class="demoji"></span>
+          </button>
+        
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-06"
+                  onclick="openMood('2026-07-06')"
+                  >
+            <span class="dnum">6</span>
+            <span class="demoji"></span>
+          </button>
+        
+      
+        
+          <button class="day  "
+                  data-iso="2026-07-07"
+                  onclick="openMood('2026-07-07')"
+                  >
+            <span class="dnum">7</span>
+            <span class="de
