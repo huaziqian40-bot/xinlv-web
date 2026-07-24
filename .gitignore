@@ -9,5 +9,6 @@ media/music/*
 logs/
 *.log
 backups/
+_recovered/
 beta0.*/
 moodsite*/
