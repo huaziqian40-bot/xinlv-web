@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}情绪小西瓜 · 放松一下{% endblock %}
 {% block content %}
-<section class="hero">
+<section class="hero game-hero">
   <h1>🍉 情绪小西瓜</h1>
   <p>心里有点乱？来合几颗水果，什么都不用想一会儿。</p>
 </section>
@@ -23,7 +23,7 @@
         </div>
       </div>
     </div>
-    <p class="game-hint">点击 / 触摸移动位置，松手或再点一下落下水果。相同水果碰到一起会合成更大的哦～</p>
+    <p class="game-hint">点按直接落下水果；按住左右滑动瞄准、松手落下；上下滑动是滚动页面，不会误落。相同水果碰到一起会合成更大的哦～</p>
   </div>
 
   <div class="game-guide">
@@ -97,17 +97,56 @@
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     return (clientX - rect.left) * (W / rect.width);
   }
-  cv.addEventListener('mousemove', e=>{
+  function moveDroppingTo(px){
     if(!dropping || over) return;
     const r = FRUITS[dropping.level].r;
-    dropping.x = Math.max(r, Math.min(W - r, pointerX(e)));
-  });
+    dropping.x = Math.max(r, Math.min(W - r, px));
+  }
+  cv.addEventListener('mousemove', e=>{ moveDroppingTo(pointerX(e)); });
+
+  // 触摸手势（v1.2.3）：点按=定位并落下；左右滑=瞄准；上下滑=滚动页面（不落下水果）
+  // 配合 CSS 的 touch-action:pan-y，垂直滑动由浏览器接管滚页面，此处只兜底标记不落水果
+  let gTouch = null;   // {x, y, scroll} 当前手势状态
+  cv.addEventListener('touchstart', e=>{
+    if(!dropping || over) return;
+    const t = e.touches[0];
+    gTouch = {x: t.clientX, y: t.clientY, scroll: false};
+    moveDroppingTo(pointerX(e));   // 点哪里，水果就移到哪
+  }, {passive:true});
   cv.addEventListener('touchmove', e=>{
-    if(!dropping || over) return;
-    e.preventDefault();
-    const r = FRUITS[dropping.level].r;
-    dropping.x = Math.max(r, Math.min(W - r, pointerX(e)));
+    if(!gTouch || !dropping || over) return;
+    const t = e.touches[0];
+    const dx = t.clientX - gTouch.x, dy = t.clientY - gTouch.y;
+    // 明显是在上下滑（想滚动页面），本次手势标记为滚动，松手不落水果
+    if(Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx) * 1.2) gTouch.scroll = true;
+    if(!gTouch.scroll) moveDroppingTo(pointerX(e));
+  }, {passive:true});   // 不 preventDefault，把垂直滑动留给页面滚动
+  cv.addEventListener('touchend', e=>{
+    const wasScroll = gTouch && gTouch.scroll;
+    gTouch = null;
+    if(wasScroll) return;       // 刚才是在滚页面，松手不落水果（防误触）
+    e.preventDefault();         // 阻止触发合成 click 造成一次点按落两个
+    doDrop();
   }, {passive:false});
+  cv.addEventListener('touchcancel', ()=>{ gTouch = null; });  // 浏览器接管滚动时会触发
+
+  // ---- 画布自适应（v1.2.3）：手机上把整个合成区域缩到一屏内，不用上下滚动 ----
+  function fitCanvas(){
+    const availW = cv.parentElement.clientWidth;
+    const tabbar = document.querySelector('.mobile-tabbar');
+    // 预留空间：底部固定 tabbar（仅移动端显示，桌面端 offsetHeight 为 0）+ 下方提示文字
+    const reserve = (tabbar && tabbar.offsetHeight ? tabbar.offsetHeight : 0) + 52;
+    const availH = window.innerHeight - cv.getBoundingClientRect().top - reserve;
+    // 内部逻辑尺寸不变（360×520），只缩放显示尺寸；H 上限保证桌面端不放大失真
+    let cssH = Math.min(availW * H / W, availH, H);
+    cssH = Math.max(240, Math.round(cssH));   // 下限：再小也能玩，宁可让页面略微可滚
+    cv.style.width  = Math.round(cssH * W / H) + 'px';
+    cv.style.height = cssH + 'px';
+    cv.style.margin = '0 auto';
+  }
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', fitCanvas);
 
   function doDrop(){
     if(!dropping || !dropReady || over) return;
@@ -116,7 +155,6 @@
     setTimeout(newDropping, 420); // 短暂冷却，防止连点狂刷
   }
   cv.addEventListener('click', doDrop);
-  cv.addEventListener('touchend', e=>{ e.preventDefault(); doDrop(); }, {passive:false});
 
   document.getElementById('g-restart').onclick = resetGame;
   document.getElementById('g-retry').onclick = resetGame;

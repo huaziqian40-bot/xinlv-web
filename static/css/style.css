@@ -585,3 +585,15 @@ input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
   .mobile-tabbar a{font-size:.65rem; padding:0 2px}
   .mobile-tabbar .ic{font-size:1.1rem}
 }
+
+/* ============ v9：小游戏移动端适配（一屏看全 + 防误触） ============ */
+/* 覆盖 v8 的 touch-action:none：垂直滑动交还浏览器滚动页面，
+   横向滑动仍由游戏接管瞄准；配合 game.html 的手势判断，滚页面不会误落水果 */
+#g-canvas{touch-action:pan-y}
+@media(max-width:640px){
+  /* 压缩游戏页头部占位，配合 game.html 的 fitCanvas() 把整个合成区放进一屏 */
+  .game-hero{margin:.5rem 0 .8rem}
+  .game-hero h1{font-size:1.35rem; margin:0}
+  .game-hero p{display:none}
+  .game-hud{margin-bottom:.45rem}
+}
