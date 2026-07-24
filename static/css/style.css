@@ -597,3 +597,139 @@ input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
   .game-hero p{display:none}
   .game-hud{margin-bottom:.45rem}
 }
+
+/* ============ v10：整站高级感视觉升级（温暖纸质 · 香槟金点缀） ============ */
+/* —— 变量重定义：全站组件通过 var() 引用，这里升级一次，全站生效 —— */
+:root{
+  --ink:#2a2621;                        /* 墨色加深一点点，对比更利落 */
+  --muted:#8d867b;
+  --line:#e7dfd3;
+  --gold:#c2a163;                       /* 香槟金：小面积点缀，提升精致感 */
+  --gold-soft:#efe3c8;
+  /* 阴影改为"环境光+直射光"双层，比单层柔和灰色更真实 */
+  --shadow-sm:0 1px 2px rgba(66,56,42,.05), 0 3px 10px rgba(66,56,42,.05);
+  --shadow:0 1px 2px rgba(66,56,42,.04), 0 10px 30px rgba(66,56,42,.08);
+  --shadow-lg:0 2px 6px rgba(66,56,42,.05), 0 24px 60px rgba(66,56,42,.13);
+  --shadow-hover:0 2px 4px rgba(95,125,117,.08), 0 16px 40px rgba(95,125,117,.18);
+  /* 主渐变加一档中间色，过渡更细腻 */
+  --grad-warm:linear-gradient(135deg,#6f8f86 0%,#86a89b 55%,#9db8ab 100%);
+  --grad-gold:linear-gradient(135deg,#c2a163,#dcc393);
+}
+
+/* —— 背景：纸纹颗粒 + 暖金光晕（噪点用内联 SVG，无外部资源） —— */
+body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+  letter-spacing:.015em;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.42 0 0 0 0 0.39 0 0 0 0 0.34 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(1200px 600px at 80% -10%, rgba(124,154,146,.10), transparent 60%),
+    radial-gradient(900px 500px at 0% 0%, rgba(194,161,99,.08), transparent 55%);
+}
+html{scroll-behavior:smooth}
+h1,h2,h3{line-height:1.35}
+::selection{background:rgba(124,154,146,.28)}
+::placeholder{color:#b5ac9e}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* —— 页面进入：轻微上浮淡入 —— */
+.container{animation:pageIn .45s cubic-bezier(.2,.7,.3,1) both}
+@keyframes pageIn{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+
+/* —— Hero：顶部柔光 + 香槟金分隔饰线（游戏页有紧凑样式，排除） —— */
+.hero:not(.game-hero){position:relative; margin:2.2rem 0 2.4rem}
+.hero:not(.game-hero)::before{
+  content:""; position:absolute; left:50%; top:-34px; width:360px; height:180px;
+  transform:translateX(-50%); pointer-events:none;
+  background:radial-gradient(closest-side, rgba(194,161,99,.15), transparent);
+}
+.hero:not(.game-hero) h1{font-size:2.05rem; letter-spacing:-.02em}
+.hero:not(.game-hero) p{letter-spacing:.04em}
+.hero:not(.game-hero)::after{
+  content:""; display:block; width:64px; height:2px; margin:14px auto 0; border-radius:2px;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* —— 导航：下划线生长动画（覆盖 v7 的静态下划线） —— */
+.nav-links a{position:relative; padding-bottom:2px}
+.nav-links a::after{
+  content:""; position:absolute; left:50%; bottom:-4px; width:0; height:2px;
+  border-radius:2px; background:var(--grad-warm);
+  transition:width .25s ease, left .25s ease;
+}
+.nav-links a:hover::after,.nav-links a.active::after{width:100%; left:0}
+
+/* —— 按钮：胶囊形 + 内高光 + 按压回弹 —— */
+button.primary,a.primary{
+  border-radius:999px; letter-spacing:.03em;
+  box-shadow:0 2px 6px rgba(95,125,117,.24), 0 8px 20px rgba(95,125,117,.20),
+             inset 0 1px 0 rgba(255,255,255,.28);
+}
+button.primary:active,a.primary:active{transform:scale(.97)}
+button.ghost{border-radius:999px; transition:background .2s ease, border-color .2s ease, color .2s ease}
+button.ghost:hover{background:rgba(124,154,146,.08); border-color:var(--accent-l); color:var(--accent-d)}
+.acc-btn{border-radius:999px}
+
+/* —— 卡片：更大圆角 + 悬停浮起（在 v7 基础上扩展到主卡片） —— */
+.block,.about,.m-card{border-radius:20px}
+.block,.calendar-card,.about{transition:box-shadow .3s ease, transform .3s ease}
+.block:hover,.calendar-card:hover,.about:hover{box-shadow:var(--shadow-hover); transform:translateY(-2px)}
+
+/* —— 月/周/年切换：iOS 风格分段控件 —— */
+.view-tabs{
+  width:fit-content; margin:0 auto 1.1rem; gap:2px; padding:4px;
+  background:#e9e3d8; border-radius:999px;
+  box-shadow:inset 0 1px 3px rgba(66,56,42,.08);
+}
+.view-tabs .vt{border:none; background:transparent; border-radius:999px; padding:.34rem 1.25rem}
+.view-tabs .vt.active{background:#fff; color:var(--accent-d); box-shadow:0 2px 8px rgba(66,56,42,.14)}
+
+/* —— 日历：今天着色底、星期字母拉开、格子更圆润 —— */
+.day{border-radius:10px; border-width:1px}
+.day.today{background:color-mix(in srgb,var(--accent) 13%, white)}
+.wd{letter-spacing:.18em; font-size:.7rem}
+.demoji{filter:drop-shadow(0 1px 1px rgba(0,0,0,.10))}
+.wk-dot{box-shadow:0 2px 6px rgba(66,56,42,.14)}
+.ym-cell.has{transition:transform .15s ease}
+.ym-cell.has:hover{transform:scale(1.15)}
+
+/* —— 弹窗：背景磨砂，聚焦内容 —— */
+.modal-bg,.crisis-bg{backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+
+/* —— 树洞聊天气泡：用户气泡渐变+投影，AI 气泡细描边 —— */
+.bubble.user{background:var(--grad-warm); box-shadow:0 4px 14px rgba(95,125,117,.25)}
+.bubble.assistant{background:#fbf9f5; border:1px solid var(--line)}
+.icon-btn{border-radius:14px; transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease}
+.icon-btn:hover:not(:disabled){transform:translateY(-1px); box-shadow:var(--shadow-sm)}
+
+/* —— 用户主页：头像双环 —— */
+.pf-avatar img,.pf-avatar-ph{
+  box-shadow:0 0 0 3px #fff, 0 0 0 5px var(--accent-l), 0 8px 20px rgba(66,56,42,.15);
+}
+
+/* —— 结果页：大 emoji 轻轻漂浮 —— */
+.big-emoji{display:inline-block; animation:floaty 3.2s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* —— 小构件打磨 —— */
+.chip{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
+.chip:hover{transform:translateY(-1px); box-shadow:var(--shadow-sm); border-color:var(--accent-l)}
+.song{border-radius:10px; padding-left:.5rem; padding-right:.5rem; transition:background .2s ease}
+.song:hover{background:rgba(124,154,146,.06)}
+.stat .num,.pf-stats b{font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.import-banner{background:linear-gradient(135deg,#fff7e6,#fdf0d2); border-color:#eed9a8}
+input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
+  box-shadow:0 0 0 4px rgba(124,154,146,.16)}
+
+/* —— 手机底部标签栏：选中项图标加胶囊底 —— */
+@media(max-width:640px){
+  .mobile-tabbar a .ic{border-radius:999px; padding:.15rem .8rem; transition:background .2s ease}
+  .mobile-tabbar a.active .ic{background:rgba(124,154,146,.16)}
+}
+
+/* —— 尊重系统"减少动态效果"设置（心理类产品的可访问性细节） —— */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;
+  }
+}
