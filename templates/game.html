@@ -42,7 +42,7 @@
   const FRUITS = [
     {r:14, color:'#e7a3b8', emoji:'🍇', name:'葡萄',   score:1},
     {r:19, color:'#e78b8b', emoji:'🍒', name:'樱桃',   score:3},
-    {r:25, color:'#f2b6a0', emoji:'🍑', name:'草莓',   score:6},
+    {r:25, color:'#ef7d9a', emoji:'🍓', name:'草莓',   score:6},
     {r:32, color:'#f0d27a', emoji:'🍋', name:'金橘',   score:10},
     {r:40, color:'#f2c14e', emoji:'🍊', name:'橙子',   score:15},
     {r:49, color:'#e7623e', emoji:'🍎', name:'苹果',   score:21},
@@ -53,7 +53,7 @@
     {r:112,color:'#6fae5c', emoji:'🍉', name:'大西瓜', score:66},
   ];
   const LOSE_LINE = 70;      // 顶部警戒线：水果静止后越过此线即判负
-  const GRAVITY = 0.35;
+  const GRAVITY = 0.28;      // 下落加速度（v1.2.2 调慢一点点，原 0.35）
   const DAMPING = 0.994;
   const WALL_BOUNCE = 0.35;
   const MERGE_BOOST = 1.06;  // 合成一瞬间轻微弹出手感

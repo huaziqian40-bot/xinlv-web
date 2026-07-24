@@ -109,6 +109,8 @@ moodsite/
 - **JS 变量重复声明会让整个 `<script>` 块静默失效**：曾发生 `confidant.html` 里 `const speakBtn` 声明两次导致 `SyntaxError`，发送/语音全部失效但页面仍正常渲染（报错在脚本执行阶段）。**改动内联 JS 后必须在浏览器 Console 确认无报错**。
 - **后台新增页面时路由/视图/模板做完不代表用户能用到**：曾发生 `review_queue` 都写好但忘了在 `manage/base.html` 导航加链接。**新增后台页面必须检查"导航有入口"**。
 - **`admin_views.py` 用到的所有 model 必须显式 import**：曾发生过用了 `UserContribution` 但顶部 import 没加，触发 `NameError`。
+- **改完任何 `templates/*.html` 必须重启 waitress 才生效**（2026-07-24 实证）：项目没有显式配置 `TEMPLATES.OPTIONS.loaders`，Django 默认自动套 `cached.Loader`（与 DEBUG 无关，见 `django/template/engine.py`），模板编译后在进程内存里缓存，waitress 又没有 runserver 的自动重载，不重启就一直发旧页面。runserver 模式有 autoreload 监听模板目录所以开发时无感。
+- **`.gitignore` 写目录排除模式时注意别误伤同名代码目录**：2026-07-24 发现 `moodsite*/` 本意是忽略历史版本文件夹，结果把真正的 `moodsite/` 配置包整个忽略了（settings.py 等从未被追踪）。写完后用 `git check-ignore -v <关键文件>` 验证。
 
 ## 7. 常用命令
 
