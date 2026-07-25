@@ -10,6 +10,8 @@
 机硬拦截）、连胜徽章、用户主页、用户投稿+AI审核、后台管理、中英双语、放松小游戏。
 部署在开发者 Windows PC 上，经内网穿透对外提供 http 访问（无 HTTPS）。
 
+**磁盘布局（2026-07-25 定）**：D 盘根目录只有 `D:\moodsite`（本项目总文件夹）和 `D:\server`（用户其他服务，勿动）。本项目生产环境在 **`D:\moodsite\product`**（git 仓库根）；总文件夹下还有 `userinput0724`（历史版本源文件）、`moodsite_recovered`（恢复中间产物）、`tmp`、`moodsitelogsedge_profile` 和聊天记录导出文件。
+
 ## 2. 技术栈
 
 - Python 3.11+ / Django 5.1.x（`Django>=5.1,<5.2`）
