@@ -96,7 +96,7 @@ moodsite/
 - **模型变更流程**：改 `models.py` 后本地跑 `python manage.py makemigrations core && python manage.py migrate` 验证再交付，不手写迁移文件。
 - **AI 相关 prompt 改动要谨慎**：`deepseek.py` 的 `SYSTEM_PROMPT` 和 `feature_views.AI_REVIEW_PROMPT` 都是经过多轮调整的安全相关文案（禁止病理化诊断、禁止透露自伤方式细节等），修改前确认没有破坏这些安全约束的语义。
 - **没有自动化测试**：`core/tests.py` 为空。当前验证方式是用 `django.test.Client` 手写一次性脚本跑一遍再交付。要引入正式测试建议 pytest-django，先征求确认。
-- **无 Git 规范**：目前不用 Git，交付方式是整包 zip 覆盖。若开始用 Git，commit message 用中文写清改了哪个功能即可，不必套用 Conventional Commits。
+- **Git 规范**：已用 Git 管理（master 分支为主线，历史快照在孤儿分支 `history` / `history-clients`，见第 6 节）。commit message 用中文写清改了哪个功能即可，不必套用 Conventional Commits。
 
 ## 6. 重要约束与踩坑记录
 
@@ -111,6 +111,8 @@ moodsite/
 - **`admin_views.py` 用到的所有 model 必须显式 import**：曾发生过用了 `UserContribution` 但顶部 import 没加，触发 `NameError`。
 - **改完任何 `templates/*.html` 必须重启 waitress 才生效**（2026-07-24 实证）：项目没有显式配置 `TEMPLATES.OPTIONS.loaders`，Django 默认自动套 `cached.Loader`（与 DEBUG 无关，见 `django/template/engine.py`），模板编译后在进程内存里缓存，waitress 又没有 runserver 的自动重载，不重启就一直发旧页面。runserver 模式有 autoreload 监听模板目录所以开发时无感。
 - **`.gitignore` 写目录排除模式时注意别误伤同名代码目录**：2026-07-24 发现 `moodsite*/` 本意是忽略历史版本文件夹，结果把真正的 `moodsite/` 配置包整个忽略了（settings.py 等从未被追踪）。写完后用 `git check-ignore -v <关键文件>` 验证。
+- **Git Bash 里给 `git worktree add` 传路径要用 Windows 风格**：2026-07-25 实证，传 `/d/xxx` 会被错误解析成 `D:\d\xxx`（盘符下多套一层 d 目录），且后续 `cd` 找不到。传 `D:\\xxx` 才正确。
+- **历史版本归档在两个孤儿分支**：`history`（网页端 21 个提交：2 个早期原型 html + 16 个 zip 快照 + 工具脚本/文档，提交日期=源文件 mtime）和 `history-clients`（客户端壳 3 个快照），源文件在 `D:\userinput0724`。与 master 无共同祖先，仅作存档查阅用（`git log history` / `git show history:<文件>`），不要 merge 进 master。
 
 ## 7. 常用命令
 
