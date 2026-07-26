@@ -135,6 +135,7 @@ moodsite/
 - **给有存量的表加"唯一约束+callable默认值"的字段必须三步走**（迁移 0008 实证）：① AddField `null=True`（不带 unique/default）→ ② RunPython 逐条生成不同值 → ③ AlterField 加 `unique=True, default=callable`。直接一步加会让所有存量行拿到同一个默认值，migrate 时 `UNIQUE constraint failed`。这是对"不手写迁移文件"约定的合理例外——先 makemigrations 生成再手工拆成三步。
 - **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
 - **模板里用 `{% static %}` 必须自己在文件顶部 `{% load static %}`**：`{% extends %}` 不会继承父模板的 load（2026-07-27 实证：game.html 加水果贴图引用后整页 500，DEBUG=False 时日志无堆栈，用 `get_template('game.html').render({})` 在 shell 里复现才看到 TemplateSyntaxError）。
+- **重启 waitress 必须确认旧进程全死透**：Windows 上多个 waitress 能同时 LISTEN 同一端口（SO_REUSEADDR），只杀一个 PID 会留下旧进程继续发旧模板，curl 验证看到的还是旧页面（2026-07-27 实证：两代 waitress 同挂 8000，新代码"没生效"其实是请求打到了旧进程）。重启后改完代码要 curl 页面内容里的新特征串确认，别只看 200。
 
 ## 7. 常用命令
 
