@@ -4,13 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}心情树洞{% endblock %}</title>
+  <title>{% block title %}念今心{% endblock %}</title>
+  <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
+  <link rel="icon" type="image/png" href="{% static 'images/favicon-180.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'images/favicon-180.png' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
   <header class="topbar">
     <div class="nav-left">
-      <a class="brand" href="/">🌙 心情树洞</a>
+      <a class="brand" href="/"><img src="{% static 'images/logo.png' %}" alt="念今心" class="brand-logo"> 念今心</a>
       <nav class="nav-links">
         <a href="/" class="{% block nav_home %}{% endblock %}">{{ T.nav_calendar }}</a>
         <a href="/confidant/" class="{% block nav_conf %}{% endblock %}">{{ T.nav_confidant }}</a>
