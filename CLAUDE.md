@@ -5,8 +5,10 @@
 
 > **改名史**：心情树洞 → 念今心（07-26）→ **心履**（07-27）。品牌资产 `D:\moodsite\logo.png`
 > （无底，网页 UI 用）/ `logo.jpg`（有底，客户端图标用）/ `fruits.png`（大西瓜游戏贴图）。
-> 网页端 logo/favicon 在 `static/images/`，水果贴图在 `static/images/fruits/`（f0~f5 已切好，
-> f6~f10 留位：补图放进去游戏自动生效，缺图回退 emoji）。改图后必须 `collectstatic`。
+> 网页端 logo/favicon 在 `static/images/`，水果贴图在 `static/images/fruits/`（f0~f10 十一张
+> 已齐，由 fruits.png 按两行布局切分：上排小→大=f0~f6，下排大→小=f10~f7；缺图时游戏回退
+> emoji）。改图后必须 `collectstatic`；**新增静态文件还要重启 waitress**（whitenoise 进程内
+> 索引在启动时建立，新文件不重启 404）。
 
 ## 1. 项目概述
 
