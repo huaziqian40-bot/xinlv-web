@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}情绪小西瓜 · 放松一下{% endblock %}
 {% block content %}
 <section class="hero game-hero">
@@ -57,6 +58,16 @@
   const DAMPING = 0.994;
   const WALL_BOUNCE = 0.35;
   const MERGE_BOOST = 1.06;  // 合成一瞬间轻微弹出手感
+
+  // ---- 水果贴图：前 6 级有手绘贴图（static/images/fruits/f0~f5.png），后 5 级留位置。
+  //      贴图没加载到（还没画/404）就回退 emoji 绘制；以后补图直接放 f6~f10.png 即自动生效。
+  const SPRITE_BASE = "{% static 'images/fruits/' %}";
+  const SPRITES = [];
+  FRUITS.forEach((f, i) => {
+    const img = new Image();
+    img.onload = () => { SPRITES[i] = img; };
+    img.src = SPRITE_BASE + 'f' + i + '.png';
+  });
 
   let balls = [];
   let idc = 0;
@@ -250,13 +261,40 @@
 
     if(dropping && dropReady && !over){
       const f = FRUITS[dropping.level];
+      const fy = f.r + 4;
+      // ---- 垂直下落提示线：从待落水果底部画到预计停下的位置，瞄准更直观 ----
+      // 落点 = 水果中心竖直下落时，最先碰到的果子的接触高度；没碰到就是地板
+      let stopY = H - f.r;   // 默认落到地板（中心高度）
+      for(const b of balls){
+        const dx = Math.abs(b.x - dropping.x);
+        if(dx < b.r + f.r){
+          // 圆心竖直轨迹与该球的上方交点（圆心距 = 两半径和）
+          const contactY = b.y - Math.sqrt((b.r + f.r) * (b.r + f.r) - dx * dx);
+          if(contactY < stopY) stopY = contactY;
+        }
+      }
+      ctx.strokeStyle = 'rgba(140,125,105,.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 7]);
+      ctx.beginPath();
+      ctx.moveTo(dropping.x, fy + f.r + 3);
+      ctx.lineTo(dropping.x, stopY + f.r);   // 画到水果停下后的底缘
+      ctx.stroke();
+      ctx.setLineDash([]);
+
       ctx.globalAlpha = 0.85;
-      drawFruit(dropping.x, f.r+4, f.r, dropping.level);
+      drawFruit(dropping.x, fy, f.r, dropping.level);
       ctx.globalAlpha = 1;
     }
   }
 
   function drawFruit(x,y,r,level){
+    // 有手绘贴图用贴图，没有（后 5 级待补图）回退 色块+emoji
+    const img = SPRITES[level];
+    if(img){
+      ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
+      return;
+    }
     const f = FRUITS[level];
     ctx.beginPath();
     ctx.arc(x,y,r,0,Math.PI*2);
@@ -276,9 +314,12 @@
     requestAnimationFrame(loop);
   }
 
-  // 合成顺序展示
+  // 合成顺序展示：有贴图显示贴图，缺贴图（后 5 级待补）自动回退 emoji
   const chainEl = document.getElementById('fruit-chain');
-  chainEl.innerHTML = FRUITS.map(f=>`<span class="fc-item" title="${f.name}">${f.emoji}</span>`).join('<span class="fc-arrow">→</span>');
+  chainEl.innerHTML = FRUITS.map((f, i) =>
+    `<span class="fc-item" title="${f.name}"><img src="${SPRITE_BASE}f${i}.png" alt="${f.name}" ` +
+    `style="width:22px;height:22px;vertical-align:middle" onerror="this.outerHTML='${f.emoji}'"></span>`
+  ).join('<span class="fc-arrow">→</span>');
 
   resetGame();
   loop();

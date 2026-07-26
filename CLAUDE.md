@@ -1,16 +1,16 @@
-# CLAUDE.md — 念今心 项目交接文档
+# CLAUDE.md — 心履 项目交接文档
 
 > 本文档给 AI（Claude Code）读，不是给人看的 README。只写事实和约定，不写部署流程。
 > 每次修复一个坑或定下一条新约定，把它补进第 6 节，不要让这份文档过时。
 
-> **2026-07-26 改名**：项目由"心情树洞"更名为 **念今心**。品牌资产 `D:\moodsite\logo.png`
-> （无底，网页 UI 用）/ `logo.jpg`（有底，客户端图标用）。网页端 logo/favicon 在
-> `static/images/`（logo.png / favicon.ico / favicon-180.png），改图后必须
-> `collectstatic`（whitenoise 从 staticfiles/ 托管）。
+> **改名史**：心情树洞 → 念今心（07-26）→ **心履**（07-27）。品牌资产 `D:\moodsite\logo.png`
+> （无底，网页 UI 用）/ `logo.jpg`（有底，客户端图标用）/ `fruits.png`（大西瓜游戏贴图）。
+> 网页端 logo/favicon 在 `static/images/`，水果贴图在 `static/images/fruits/`（f0~f5 已切好，
+> f6~f10 留位：补图放进去游戏自动生效，缺图回退 emoji）。改图后必须 `collectstatic`。
 
 ## 1. 项目概述
 
-"念今心"（原"心情树洞"）是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
+"心履"（曾用名"心情树洞""念今心"）是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
 按情绪推荐音乐/建议/小知识/视频、与 AI 树洞（DeepSeek）文字+语音聊天（内置关键词危
 机硬拦截）、连胜徽章、用户主页、用户投稿+AI审核、后台管理、中英双语、放松小游戏。
 部署在开发者 Windows PC 上，经内网穿透对外提供 http 访问（无 HTTPS）。
@@ -132,6 +132,7 @@ moodsite/
 - **API 的 `?since=` 参数必须 URL 编码**：ISO8601 时间串里的 `+08:00` 中 `+` 号不编码会被当成空格，服务端解析失败就退化成全量拉取（真实踩过，测试里因此挂过一次）。客户端发参数一律走编码后的 query string。
 - **给有存量的表加"唯一约束+callable默认值"的字段必须三步走**（迁移 0008 实证）：① AddField `null=True`（不带 unique/default）→ ② RunPython 逐条生成不同值 → ③ AlterField 加 `unique=True, default=callable`。直接一步加会让所有存量行拿到同一个默认值，migrate 时 `UNIQUE constraint failed`。这是对"不手写迁移文件"约定的合理例外——先 makemigrations 生成再手工拆成三步。
 - **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
+- **模板里用 `{% static %}` 必须自己在文件顶部 `{% load static %}`**：`{% extends %}` 不会继承父模板的 load（2026-07-27 实证：game.html 加水果贴图引用后整页 500，DEBUG=False 时日志无堆栈，用 `get_template('game.html').render({})` 在 shell 里复现才看到 TemplateSyntaxError）。
 
 ## 7. 常用命令
 
