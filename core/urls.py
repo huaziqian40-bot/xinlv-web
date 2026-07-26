@@ -1,8 +1,21 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from . import views, admin_views, auth_views as my_auth, feature_views
+from . import views, admin_views, auth_views as my_auth, feature_views, api
 
 urlpatterns = [
+    # ---- 客户端 REST API（安卓/桌面，Bearer Token 认证）----
+    path("api/v1/ping/", api.ping, name="api_ping"),
+    path("api/v1/login/", api.login, name="api_login"),
+    path("api/v1/logout/", api.logout, name="api_logout"),
+    path("api/v1/sync/pull/", api.sync_pull, name="api_sync_pull"),
+    path("api/v1/sync/push/", api.sync_push, name="api_sync_push"),
+    path("api/v1/catalog/", api.catalog, name="api_catalog"),
+    path("api/v1/recommend/", api.recommend, name="api_recommend"),
+    path("api/v1/chat/", api.chat, name="api_chat"),
+    path("api/v1/chat/history/", api.chat_history, name="api_chat_history"),
+    path("api/v1/chat/clear/", api.chat_clear, name="api_chat_clear"),
+    path("api/v1/profile/", api.profile, name="api_profile"),
+
     path("", views.home, name="home"),
     path("save/", views.save_mood, name="save_mood"),
     path("game/", views.game, name="game"),

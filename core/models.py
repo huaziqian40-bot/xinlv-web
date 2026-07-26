@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
+import uuid as _uuid
+
 
 # ---- 心情定义 ----
 # valence: 1 = 正面, 0 = 中性, -1 = 负面
@@ -21,22 +23,36 @@ MOOD_KEYS = [m[0] for m in MOODS]
 MOOD_MAP = {m[0]: {"label": m[1], "emoji": m[2], "color": m[3], "valence": m[4]} for m in MOODS}
 
 
+class AliveManager(models.Manager):
+    """默认管理器：自动排除已软删除（墓碑）的记录。
+    网页端所有现有查询都不用改；API 同步需要看墓碑时用 all_objects。"""
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted=False)
+
+
 class MoodEntry(models.Model):
     """一条心情记录。
     登录用户：按 user 存（可跨设备同步）。
     未登录访客：不存这里，存在浏览器 localStorage。
     session_key 字段保留作历史兼容，新数据一般为空。
+    uuid：客户端离线创建时生成，全端同步去重的依据（追加型数据，无冲突合并）。
+    deleted：软删除墓碑。客户端删记录不真删，置位后参与同步，防止同步复活。
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                              on_delete=models.CASCADE, related_name="moods")
     session_key = models.CharField(max_length=40, blank=True, default="", db_index=True)
+    uuid = models.CharField(max_length=36, unique=True, default=_uuid.uuid4, db_index=True)
     date = models.DateField(db_index=True)
     at = models.DateTimeField(null=True, blank=True, db_index=True,
                               help_text="这条情绪的记录时刻（用于一天内多条排序）")
     mood = models.CharField(max_length=20, choices=[(m[0], m[1]) for m in MOODS])
     note = models.TextField(blank=True, default="")
+    deleted = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = AliveManager()
+    all_objects = models.Manager()   # 含墓碑，仅供 API 同步使用
 
     class Meta:
         # 一天可记录多条；按日期倒序、同日内按记录时刻正序
@@ -48,6 +64,25 @@ class MoodEntry(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.mood}"
+
+
+class ApiToken(models.Model):
+    """客户端（安卓/桌面）登录令牌。一个用户可有多个（多设备），互不踢出。"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="api_tokens")
+    key = models.CharField(max_length=40, unique=True, db_index=True)
+    device = models.CharField(max_length=100, blank=True, default="",
+                              help_text="设备备注，如 xiaomi-14 / windows-pc，便于用户管理")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    @classmethod
+    def mint(cls, user, device=""):
+        import secrets
+        return cls.objects.create(user=user, key=secrets.token_hex(20), device=device)
+
+    def __str__(self):
+        return f"token:{self.user.username}:{self.device or self.key[:6]}"
 
 
 class Song(models.Model):

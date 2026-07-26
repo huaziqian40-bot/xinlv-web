@@ -181,6 +181,7 @@ RATE_LIMITS = {
     "contribute": (int(os.environ.get("RL_UPLOAD_N", "10")), 300), # 投稿：5分钟内最多10次
     "login": (int(os.environ.get("RL_LOGIN_N", "8")), 300),       # 登录：5分钟内最多8次失败
     "tts": (int(os.environ.get("RL_TTS_N", "30")), 60),           # 语音合成：60秒最多30次
+    "api_login": (int(os.environ.get("RL_API_LOGIN_N", "10")), 600), # 客户端API登录：10分钟内最多10次
 }
 
 # --- 日志：错误写到文件，方便排查崩溃 ---
