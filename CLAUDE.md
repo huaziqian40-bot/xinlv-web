@@ -43,6 +43,8 @@ moodsite/
 │   ├── models.py             # 全部模型 + MOODS/BADGES 常量
 │   ├── urls.py                # 业务路由（唯一路由文件）
 │   ├── views.py               # 首页/日历/心情/树洞/结果页/免责声明
+│   ├── api.py                 # 客户端 REST API（/api/v1/，Bearer Token 认证）
+│   ├── tests_api.py           # API 全流程测试（TestCase，deepseek 打 mock）
 │   ├── feature_views.py       # 用户主页/徽章/投稿审核/复审/多语言切换
 │   ├── admin_views.py         # 自建后台（非 Django admin），/manage/ 下的视图
 │   ├── auth_views.py           # 注册（登录用 Django 自带 LoginView）
@@ -85,6 +87,13 @@ moodsite/
 
 **多语言**：`core.i18n.STRINGS` 是唯一的双语源（`zh`/`en` 两个 dict，key 相同）。模板里一律用 `{{ T.some_key }}`，不写死中/英文。新增界面文案必须同时在两个 dict 里加 key，遗漏英文会导致英文模式下该处仍显示中文。语言存在 session +（登录用户）`UserProfile.language`。
 
+**客户端 API（/api/v1/，2026-07-26 上线）**：为安卓/桌面原生客户端（离线可用、联网同步）提供 REST 接口，实现在 `core/api.py`。设计要点：
+- **认证**：`POST /api/v1/login/` 用账号密码换 `ApiToken`（40 位 hex，长期有效，按设备区分），之后一律 `Authorization: Bearer <key>`。不用 session/cookie，所以全部 `csrf_exempt`。
+- **同步模型**：心情记录是追加型数据。客户端离线创建时自己生成 `MoodEntry.uuid`，按 uuid upsert 去重；更新/删除按 `updated_at` **最新者赢**（last-write-wins，服务端只信客户端带来的时间戳做比较，自己存库时 updated_at=auto_now）；删除是**墓碑**（`deleted=True`，不真删，防同步复活）。网页端查询走 `AliveManager`（默认 `objects`，自动排除墓碑），同步走 `all_objects`——所以网页端既有代码零改动。
+- **复用网页端逻辑**：`/api/v1/chat/` 的危机硬拦截（crisis→不发 AI）与 deepseek 调用顺序和 `confidant_send` 完全一致；`/api/v1/recommend/` 复用 `recommendations.build()`；`/api/v1/catalog/` 给客户端离线缓存推荐内容（含音频绝对 URL）。
+- **端点清单**：ping（免认证探活）/ login / logout / sync/pull（`?since=` 增量，含墓碑）/ sync/push（批量 ≤500，逐条容错）/ catalog / recommend / chat / chat/history / chat/clear / profile。
+- **测试**：`core/tests_api.py` 16 个用例（`python manage.py test core.tests_api`），独立测试库不碰生产数据，`deepseek.chat` 一律 mock。
+
 ## 5. 编码规范与约定
 
 - **文件级 docstring 强约定**：每个 `.py` 文件顶部三引号说明该文件用途，新文件也要写。
@@ -97,7 +106,7 @@ moodsite/
 - **注释语言**：代码注释一律中文（项目开发者是中文母语使用者，这是唯一约定）。
 - **模型变更流程**：改 `models.py` 后本地跑 `python manage.py makemigrations core && python manage.py migrate` 验证再交付，不手写迁移文件。
 - **AI 相关 prompt 改动要谨慎**：`deepseek.py` 的 `SYSTEM_PROMPT` 和 `feature_views.AI_REVIEW_PROMPT` 都是经过多轮调整的安全相关文案（禁止病理化诊断、禁止透露自伤方式细节等），修改前确认没有破坏这些安全约束的语义。
-- **没有自动化测试**：`core/tests.py` 为空。当前验证方式是用 `django.test.Client` 手写一次性脚本跑一遍再交付。要引入正式测试建议 pytest-django，先征求确认。
+- **测试**：`core/tests_api.py` 有 API 的 16 个 TestCase 用例（2026-07-26 起），其余网页端逻辑仍无自动化测试，验证方式是用 `django.test.Client` 手写一次性脚本跑一遍再交付。写外部 API 调用（deepseek 等）的测试必须 mock，不能依赖外网。
 - **Git 规范**：已用 Git 管理（master 分支为主线，历史快照在孤儿分支 `history` / `history-clients`，见第 6 节）。commit message 用中文写清改了哪个功能即可，不必套用 Conventional Commits。
 
 ## 6. 重要约束与踩坑记录
@@ -115,6 +124,9 @@ moodsite/
 - **`.gitignore` 写目录排除模式时注意别误伤同名代码目录**：2026-07-24 发现 `moodsite*/` 本意是忽略历史版本文件夹，结果把真正的 `moodsite/` 配置包整个忽略了（settings.py 等从未被追踪）。写完后用 `git check-ignore -v <关键文件>` 验证。
 - **Git Bash 里给 `git worktree add` 传路径要用 Windows 风格**：2026-07-25 实证，传 `/d/xxx` 会被错误解析成 `D:\d\xxx`（盘符下多套一层 d 目录），且后续 `cd` 找不到。传 `D:\\xxx` 才正确。
 - **历史版本归档在两个孤儿分支**：`history`（网页端 21 个提交：2 个早期原型 html + 16 个 zip 快照 + 工具脚本/文档，提交日期=源文件 mtime）和 `history-clients`（客户端壳 3 个快照），源文件在 `D:\moodsite\userinput0724`。与 master 无共同祖先，仅作存档查阅用（`git log history` / `git show history:<文件>`），不要 merge 进 master。
+- **API 的 `?since=` 参数必须 URL 编码**：ISO8601 时间串里的 `+08:00` 中 `+` 号不编码会被当成空格，服务端解析失败就退化成全量拉取（真实踩过，测试里因此挂过一次）。客户端发参数一律走编码后的 query string。
+- **给有存量的表加"唯一约束+callable默认值"的字段必须三步走**（迁移 0008 实证）：① AddField `null=True`（不带 unique/default）→ ② RunPython 逐条生成不同值 → ③ AlterField 加 `unique=True, default=callable`。直接一步加会让所有存量行拿到同一个默认值，migrate 时 `UNIQUE constraint failed`。这是对"不手写迁移文件"约定的合理例外——先 makemigrations 生成再手工拆成三步。
+- **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
 
 ## 7. 常用命令
 
@@ -151,13 +163,16 @@ python backup_db.py                     # 一次性备份到 backups/，保留�
 
 ## 9. 当前工作状态
 
-**已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"。
+**已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"、**客户端 REST API v1**（2026-07-26：令牌登录/离线同步/目录/推荐/树洞/个人数据，16 个测试用例）。
 
-**待办**：HTTPS 未配置（`ENABLE_HTTPS`/`SECURE_COOKIES` 开关已预留）；无自动化测试；树洞页部分 JS 动态文案（语音状态提示、危机弹窗）未接入 i18n，英文模式下仍显示中文；nssm 自启只有手册未验证已配置；SQLite 若用户量明显增长需评估迁移 PostgreSQL。
+**进行中（客户端计划，2026-07-26 定）**：做**原生本地客户端**（非 webview 壳），离线可用、联网与服务器同步，界面与网页端不同。技术选型：安卓端 Java 原生 + Room 本地库；桌面端 JavaFX 共享代码，jpackage 打 Windows exe / Mac dmg（Mac 也接受 HMCL 式 jar + 用户自装 Java）。MVP 范围：登录/记心情/日历/推荐/AI聊天（仅联网）/徽章；不做游戏、投稿、后台、i18n。注意站点是 http 无 HTTPS，安卓需 `usesCleartextTraffic="true"`。顺序：安卓 → 桌面。
+
+**待办**：HTTPS 未配置（`ENABLE_HTTPS`/`SECURE_COOKIES` 开关已预留）；树洞页部分 JS 动态文案（语音状态提示、危机弹窗）未接入 i18n，英文模式下仍显示中文；nssm 自启只有手册未验证已配置；SQLite 若用户量明显增长需评估迁移 PostgreSQL。
 
 ## 10. 关键文件索引
 
 - 理解**数据模型全貌**：`core/models.py`（一个文件包含所有模型 + MOODS/BADGES 常量）
+- 理解**客户端 API 全貌**：`core/api.py`（认证/同步/目录/树洞）+ 本文件第 4 节"客户端 API"段；接口行为以 `core/tests_api.py` 的用例为准
 - 理解**心情记录与日历渲染**：`core/views.py` 的 `home()` / `save_mood()` / `_representative_mood()` / `calendar_data()`，配合 `templates/home.html`
 - 理解**AI树洞安全机制**：`core/crisis.py` + `core/deepseek.py`
 - 理解**投稿审核全流程**：`core/feature_views.py` 的 `contribute()` / `ai_review()` / `_publish_contribution()` / `review_queue()`
