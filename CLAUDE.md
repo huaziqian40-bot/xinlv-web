@@ -1,11 +1,16 @@
-# CLAUDE.md — 心情树洞 项目交接文档
+# CLAUDE.md — 念今心 项目交接文档
 
 > 本文档给 AI（Claude Code）读，不是给人看的 README。只写事实和约定，不写部署流程。
 > 每次修复一个坑或定下一条新约定，把它补进第 6 节，不要让这份文档过时。
 
+> **2026-07-26 改名**：项目由"心情树洞"更名为 **念今心**。品牌资产 `D:\moodsite\logo.png`
+> （无底，网页 UI 用）/ `logo.jpg`（有底，客户端图标用）。网页端 logo/favicon 在
+> `static/images/`（logo.png / favicon.ico / favicon-180.png），改图后必须
+> `collectstatic`（whitenoise 从 staticfiles/ 托管）。
+
 ## 1. 项目概述
 
-"心情树洞"是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
+"念今心"（原"心情树洞"）是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
 按情绪推荐音乐/建议/小知识/视频、与 AI 树洞（DeepSeek）文字+语音聊天（内置关键词危
 机硬拦截）、连胜徽章、用户主页、用户投稿+AI审核、后台管理、中英双语、放松小游戏。
 部署在开发者 Windows PC 上，经内网穿透对外提供 http 访问（无 HTTPS）。
