@@ -13,7 +13,7 @@ import datetime as dt
 import json
 from functools import wraps
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -119,6 +119,36 @@ def login(request):
     streak, _ = compute_streak_and_badges(user)
     return JsonResponse({"token": token.key, "username": user.username,
                          "streak": streak})
+
+
+@csrf_exempt
+@require_POST
+def register(request):
+    """{username, password, agree, device?} -> {token, username, streak}
+    注册规则与网页版 auth_views.register 保持一致（账号唯一/密码≥6位/需同意免责声明），
+    成功后直接发令牌，客户端不用再登录一次。"""
+    if ratelimit.is_limited(request, "api_login"):
+        return _err("尝试太频繁了，过几分钟再试。", 429)
+    data = _json_body(request)
+    if not data:
+        return _err("请求格式错误")
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+    device = (data.get("device") or "")[:100]
+    agreed = data.get("agree") is True
+    if not username or not password:
+        return _err("账号和密码都要填")
+    if len(username) > 150:
+        return _err("账号太长了")
+    if get_user_model().objects.filter(username=username).exists():
+        return _err("这个账号已经被注册了，换一个吧")
+    if len(password) < 6:
+        return _err("密码至少 6 位")
+    if not agreed:
+        return _err("请先阅读并同意《免责声明》")
+    user = get_user_model().objects.create_user(username=username, password=password)
+    token = ApiToken.mint(user, device)
+    return JsonResponse({"token": token.key, "username": user.username, "streak": 0})
 
 
 @require_POST

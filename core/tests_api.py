@@ -64,6 +64,36 @@ class ApiTest(TestCase):
         r = self.client.get("/api/v1/sync/pull/")
         self.assertEqual(r.status_code, 401)
 
+    # ---- 注册 ----
+    def register(self, username="newbie", password="pw123456", agree=True):
+        return self.client.post("/api/v1/register/", data=json.dumps({
+            "username": username, "password": password,
+            "agree": agree, "device": "test"}), content_type="application/json")
+
+    def test_register_ok_auto_token(self):
+        r = self.register()
+        self.assertEqual(r.status_code, 200, r.content)
+        body = r.json()
+        self.assertEqual(body["username"], "newbie")
+        # 注册即登录：令牌可直接用
+        r = self.client.get("/api/v1/profile/", **self.auth(body["token"]))
+        self.assertEqual(r.status_code, 200)
+
+    def test_register_duplicate_username(self):
+        r = self.register(username="apiuser")   # setUpTestData 里已存在
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("已经被注册", r.json()["error"])
+
+    def test_register_short_password(self):
+        r = self.register(password="123")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("6", r.json()["error"])
+
+    def test_register_must_agree(self):
+        r = self.register(agree=False)
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(User.objects.filter(username="newbie").exists())
+
     def test_logout_invalidates_token(self):
         token = self.login()
         r = self.client.post("/api/v1/logout/", **self.auth(token))

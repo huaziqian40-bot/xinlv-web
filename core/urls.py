@@ -6,6 +6,7 @@ urlpatterns = [
     # ---- 客户端 REST API（安卓/桌面，Bearer Token 认证）----
     path("api/v1/ping/", api.ping, name="api_ping"),
     path("api/v1/login/", api.login, name="api_login"),
+    path("api/v1/register/", api.register, name="api_register"),
     path("api/v1/logout/", api.logout, name="api_logout"),
     path("api/v1/sync/pull/", api.sync_pull, name="api_sync_pull"),
     path("api/v1/sync/push/", api.sync_push, name="api_sync_push"),
