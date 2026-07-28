@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .models import (MoodEntry, ChatMessage, Song, Activity, PsychologyTip,
-                     BilibiliVideo, SiteSettings, ApiToken, MOODS, MOOD_KEYS,
+                     BilibiliVideo, SiteSettings, ApiToken, MOODS, MOOD_KEYS, MOOD_MAP,
                      compute_streak_and_badges)
 from . import recommendations, deepseek, crisis, ratelimit
 
@@ -62,6 +62,8 @@ def _entry_dict(e):
     return {
         "uuid": e.uuid, "date": e.date.isoformat(), "at": _iso(e.at),
         "mood": e.mood, "note": e.note, "deleted": e.deleted,
+        "intensity_level": e.intensity_level,
+        "intensity_percent": e.intensity_percent,
         "created_at": _iso(e.created_at), "updated_at": _iso(e.updated_at),
     }
 
@@ -214,6 +216,16 @@ def sync_push(request):
                 continue
         note = (item.get("note") or "").strip()
         at = _parse_dt(item.get("at"))
+        intensity_level = item.get("intensity_level", 2)
+        if not isinstance(intensity_level, int) or intensity_level < 1 or intensity_level > 4:
+            intensity_level = 2
+        intensity_percent = item.get("intensity_percent", 50)
+        if not isinstance(intensity_percent, int):
+            try:
+                intensity_percent = int(intensity_percent)
+            except (ValueError, TypeError):
+                intensity_percent = 50
+        intensity_percent = max(0, min(100, intensity_percent))
         incoming_ts = _parse_dt(item.get("updated_at")) or timezone.now()
 
         existing = MoodEntry.all_objects.filter(user=u, uuid=uid).first()
@@ -226,6 +238,8 @@ def sync_push(request):
             existing.mood = mood if mood in MOOD_KEYS else existing.mood
             existing.note = note
             existing.deleted = deleted
+            existing.intensity_level = intensity_level
+            existing.intensity_percent = intensity_percent
             existing.save()       # auto_now 会把 updated_at 刷成现在
             updated += 1
         else:
@@ -234,7 +248,8 @@ def sync_push(request):
                 continue
             MoodEntry.all_objects.create(
                 user=u, uuid=uid, date=date, at=at or timezone.now(),
-                mood=mood, note=note)
+                mood=mood, note=note,
+                intensity_level=intensity_level, intensity_percent=intensity_percent)
             saved += 1
 
     return JsonResponse({
@@ -291,6 +306,23 @@ def recommend(request):
 
 
 # ---------- AI 树洞（仅联网；危机硬拦截与网页端一致）----------
+def _build_mood_context(user):
+    """构建用户最近心情上下文，供 API 树洞感知。"""
+    recent = list(MoodEntry.objects.filter(user=user)
+                  .order_by("-date", "-at")[:5])
+    if not recent:
+        return None
+    parts = []
+    for e in reversed(recent):
+        info = MOOD_MAP.get(e.mood, {})
+        label = info.get("label", e.mood)
+        level_names = {1: "略微", 2: "有点", 3: "相当", 4: "十分"}
+        level_str = level_names.get(e.intensity_level, "")
+        d = e.date.strftime("%m月%d日")
+        parts.append(f"{d} 记录了「{label}」{level_str}")
+    return "用户最近的心情记录（供参考，对话中自然提起即可，不要罗列）：" + "；".join(parts)
+
+
 @require_POST
 @api_login_required
 def chat(request):
@@ -319,6 +351,12 @@ def chat(request):
                   .order_by("-created_at")[:20])
     recent.reverse()
     history = [{"role": m.role, "content": m.content} for m in recent]
+
+    # 注入用户最近心情上下文
+    mood_context = _build_mood_context(u)
+    if mood_context:
+        history.insert(0, {"role": "system", "content": mood_context})
+
     reply, err = deepseek.chat(history)
     if reply is None:
         reply = err      # 错误提示语直接当回复返回，客户端无感

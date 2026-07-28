@@ -47,6 +47,13 @@ class MoodEntry(models.Model):
                               help_text="这条情绪的记录时刻（用于一天内多条排序）")
     mood = models.CharField(max_length=20, choices=[(m[0], m[1]) for m in MOODS])
     note = models.TextField(blank=True, default="")
+    intensity_level = models.IntegerField(
+        default=2,
+        choices=[(1, "略微"), (2, "有点"), (3, "相当"), (4, "十分")],
+        help_text="情绪强度等级：1=略微 2=有点 3=相当 4=十分")
+    intensity_percent = models.IntegerField(
+        default=50,
+        help_text="情绪强度百分比 0-100，用于 UI 展示")
     deleted = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

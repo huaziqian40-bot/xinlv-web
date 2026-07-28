@@ -192,10 +192,23 @@ def save_mood(request):
     if date > dt.date.today():
         return HttpResponseBadRequest("不能记录未来的日期")
 
+    # 情绪强度：默认"有点"(2) / 50%
+    try:
+        intensity_level = int(request.POST.get("intensity_level", 2))
+        intensity_level = max(1, min(4, intensity_level))
+    except (ValueError, TypeError):
+        intensity_level = 2
+    try:
+        intensity_percent = int(request.POST.get("intensity_percent", 50))
+        intensity_percent = max(0, min(100, intensity_percent))
+    except (ValueError, TypeError):
+        intensity_percent = 50
+
     # 一天可记录多条，不覆盖；记录当前时刻用于排序
     MoodEntry.objects.create(
-        user=request.user, date=date, mood=mood, note=note, at=timezone.now())
-    return redirect(f"/result/?mood={mood}&date={date_str}")
+        user=request.user, date=date, mood=mood, note=note, at=timezone.now(),
+        intensity_level=intensity_level, intensity_percent=intensity_percent)
+    return redirect(f"/result/?mood={mood}&date={date_str}&intensity_level={intensity_level}&intensity_percent={intensity_percent}")
 
 
 @require_POST
@@ -217,7 +230,9 @@ def import_local(request):
             continue
         MoodEntry.objects.update_or_create(
             user=request.user, date=date,
-            defaults={"mood": mood, "note": (item.get("note") or "").strip()})
+            defaults={"mood": mood, "note": (item.get("note") or "").strip(),
+                      "intensity_level": int(item.get("intensity_level", 2)),
+                      "intensity_percent": int(item.get("intensity_percent", 50))})
         n += 1
     return JsonResponse({"imported": n})
 
@@ -228,6 +243,18 @@ def result(request):
     date_str = request.GET.get("date", "")
     note = ""
 
+    # 读取情绪强度参数
+    try:
+        intensity_level = int(request.GET.get("intensity_level", 2))
+        intensity_level = max(1, min(4, intensity_level))
+    except (ValueError, TypeError):
+        intensity_level = 2
+    try:
+        intensity_percent = int(request.GET.get("intensity_percent", 50))
+        intensity_percent = max(0, min(100, intensity_percent))
+    except (ValueError, TypeError):
+        intensity_percent = 50
+
     if mood not in MOOD_KEYS:
         # 兜底：登录用户只给了日期时，按账号查当天心情
         if request.user.is_authenticated and date_str:
@@ -236,6 +263,8 @@ def result(request):
                     user=request.user, date=dt.date.fromisoformat(date_str)).first()
                 if e:
                     mood, note = e.mood, e.note
+                    intensity_level = e.intensity_level
+                    intensity_percent = e.intensity_percent
             except ValueError:
                 pass
     if mood not in MOOD_KEYS:
@@ -247,6 +276,8 @@ def result(request):
                 user=request.user, date=dt.date.fromisoformat(date_str)).first()
             if e:
                 note = e.note
+                intensity_level = e.intensity_level
+                intensity_percent = e.intensity_percent
         except ValueError:
             pass
 
@@ -259,7 +290,9 @@ def result(request):
             pass
 
     rec = recommendations.build(mood)
-    return render(request, "result.html", {"rec": rec, "note": note, "date_label": date_label})
+    return render(request, "result.html", {"rec": rec, "note": note, "date_label": date_label,
+                                           "intensity_level": intensity_level,
+                                           "intensity_percent": intensity_percent})
 
 
 def disclaimer(request):
@@ -283,6 +316,26 @@ def about(request):
 
 
 # ---------- AI 树洞 ----------
+def _build_mood_context(request):
+    """构建用户最近心情的上下文信息，供 AI 树洞感知。
+    返回一段自然语言描述，或 None（无记录时）。"""
+    if not request.user.is_authenticated:
+        return None
+    recent = list(MoodEntry.objects.filter(user=request.user)
+                  .order_by("-date", "-at")[:5])
+    if not recent:
+        return None
+    parts = []
+    for e in reversed(recent):
+        info = MOOD_MAP.get(e.mood, {})
+        label = info.get("label", e.mood)
+        level_names = {1: "略微", 2: "有点", 3: "相当", 4: "十分"}
+        level_str = level_names.get(e.intensity_level, "")
+        d = e.date.strftime("%m月%d日")
+        parts.append(f"{d} 记录了「{label}」{level_str}")
+    return "用户最近的心情记录（供参考，对话中自然提起即可，不要罗列）：" + "；".join(parts)
+
+
 def _chat_qs(request):
     if request.user.is_authenticated:
         return ChatMessage.objects.filter(user=request.user)
@@ -319,6 +372,12 @@ def confidant_send(request):
     recent = list(_chat_qs(request).order_by("-created_at")[:20])
     recent.reverse()
     history = [{"role": m.role, "content": m.content} for m in recent]
+
+    # 注入用户最近心情上下文，让 AI 知道用户今天/最近的心情
+    mood_context = _build_mood_context(request)
+    if mood_context:
+        # 插入到历史最前面（但放在 system prompt 之后），作为用户状态参考
+        history.insert(0, {"role": "system", "content": mood_context})
 
     reply, err = deepseek.chat(history)
     if reply is None:

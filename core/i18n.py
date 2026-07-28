@@ -57,6 +57,9 @@ STRINGS = {
         "obtained": "已获得", "still_need": "还差", "keep_going": "继续加油！",
         "current_streak_pre": "你当前连续记录", "current_streak_post": "天，继续加油！",
         "lang_name": "中文",
+        # 情绪强度
+        "intensity": "强度", "intensity_slight": "略微", "intensity_some": "有点",
+        "intensity_quite": "相当", "intensity_very": "十分",
     },
     "en": {
         "nav_calendar": "Calendar", "nav_confidant": "AI Tree Hole", "nav_about": "About",
@@ -106,6 +109,9 @@ STRINGS = {
         "obtained": "Obtained", "still_need": "need", "keep_going": "keep going!",
         "current_streak_pre": "Your current streak is", "current_streak_post": "days. Keep going!",
         "lang_name": "English",
+        # 情绪强度
+        "intensity": "Intensity", "intensity_slight": "Slightly", "intensity_some": "Somewhat",
+        "intensity_quite": "Quite", "intensity_very": "Very",
     },
 }
 

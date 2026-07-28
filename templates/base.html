@@ -10,7 +10,10 @@
   <link rel="apple-touch-icon" href="{% static 'images/favicon-180.png' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body>
+<body class="{% if latest_mood %}mood-{{ latest_mood.key }} mood-intensity-{{ latest_mood.intensity_level }}{% endif %}">
+  <!-- 情绪氛围叠加层 -->
+  <div class="mood-overlay"></div>
+  <div class="rain-container" id="rain-container"></div>
   <header class="topbar">
     <div class="nav-left">
       <a class="brand" href="/"><img src="{% static 'images/logo.png' %}" alt="心履" class="brand-logo"> 心履</a>
@@ -70,5 +73,24 @@
       <strong>{{ site.crisis_hotline|default:"12356" }}</strong>{{ T.crisis_note_2 }}</p>
   </footer>
   {% block script %}{% endblock %}
+  {% if latest_mood and latest_mood.key == 'sad' or latest_mood and latest_mood.key == 'lonely' or latest_mood and latest_mood.key == 'numb' %}
+  <script>
+  (function(){
+    const container = document.getElementById('rain-container');
+    if(!container) return;
+    const count = 60;
+    for(let i=0;i<count;i++){
+      const drop = document.createElement('div');
+      drop.className = 'rain-drop';
+      drop.style.left = Math.random() * 100 + '%';
+      drop.style.animationDuration = (0.8 + Math.random() * 1.2) + 's';
+      drop.style.animationDelay = (Math.random() * 2) + 's';
+      drop.style.height = (8 + Math.random() * 10) + 'px';
+      drop.style.opacity = 0.2 + Math.random() * 0.3;
+      container.appendChild(drop);
+    }
+  })();
+  </script>
+  {% endif %}
 </body>
 </html>

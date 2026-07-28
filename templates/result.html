@@ -4,6 +4,17 @@
   <div class="big-emoji">{{ rec.info.emoji }}</div>
   <h1>{% if date_label %}{{ date_label }}，{% endif %}{{ T.you_feel }}<span style="color:{{ rec.info.color }}">{{ rec.info.label }}</span></h1>
   {% if note %}<p class="note">“{{ note }}”</p>{% endif %}
+  {% if intensity_level %}
+  <div class="intensity-bar">
+    <span class="ib-label">{{ T.intensity }}</span>
+    <div class="ib-track">
+      <div class="ib-fill" style="width:{{ intensity_percent }}%;background:{{ rec.info.color }}"></div>
+    </div>
+    <span class="ib-text">
+      {% if intensity_level == 1 %}{{ T.intensity_slight }}{% elif intensity_level == 2 %}{{ T.intensity_some }}{% elif intensity_level == 3 %}{{ T.intensity_quite }}{% elif intensity_level == 4 %}{{ T.intensity_very }}{% endif %}
+    </span>
+  </div>
+  {% endif %}
 </section>
 
 {% if rec.valence > 0 %}

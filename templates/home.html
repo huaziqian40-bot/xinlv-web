@@ -91,11 +91,27 @@
     <div class="mood-grid">
       {% for key,label,emoji,color,val in moods %}
       <label class="mood-opt" style="--c:{{ color }}">
-        <input type="radio" name="mood" value="{{ key }}" required>
+        <input type="radio" name="mood" value="{{ key }}" required onchange="updateIntensityColor('{{ color }}')">
         <span class="me">{{ emoji }}</span>
         <span class="ml">{{ label }}</span>
       </label>
       {% endfor %}
+    </div>
+    <!-- 情绪强度无极滑动条 -->
+    <div class="intensity-row" id="intensity-row" style="display:none">
+      <div class="intensity-header">
+        <span class="intensity-label">{{ T.intensity }}</span>
+        <span class="intensity-text" id="intensity-text">{{ T.intensity_some }}</span>
+      </div>
+      <div class="intensity-bar-wrap">
+        <div class="intensity-track" id="intensity-track">
+          <div class="intensity-fill" id="intensity-fill" style="width:50%"></div>
+          <input type="range" min="0" max="100" value="50" class="intensity-slider"
+                 id="intensity-slider" oninput="onIntensityChange(this.value)">
+        </div>
+        <input type="hidden" name="intensity_level" id="f-intensity-level" value="2">
+        <input type="hidden" name="intensity_percent" id="f-intensity-percent" value="50">
+      </div>
     </div>
     <textarea name="note" id="f-note" placeholder="想写点什么吗？（可留空）" rows="3"></textarea>
     <div class="modal-btns">
@@ -119,6 +135,19 @@ function openMood(iso){
   document.getElementById('mood-form').reset();
   document.getElementById('f-date').value = iso;
   document.getElementById('f-note').value = '';
+  // 强度相关元素可能因模板缓存不存在（重启服务器后恢复），空值检查避免报错
+  var sl = document.getElementById('intensity-slider');
+  if(sl) sl.value = 50;
+  var li = document.getElementById('f-intensity-level');
+  if(li) li.value = 2;
+  var pi = document.getElementById('f-intensity-percent');
+  if(pi) pi.value = 50;
+  var fi = document.getElementById('intensity-fill');
+  if(fi) fi.style.width = '50%';
+  var ti = document.getElementById('intensity-text');
+  if(ti) ti.textContent = '有点';
+  var ir = document.getElementById('intensity-row');
+  if(ir) ir.style.display = 'none';
   const [y,m,d] = iso.split('-');
   document.getElementById('modal-title').textContent = `${+m}月${+d}日 · 此刻的心情`;
   const listBox = document.getElementById('day-list');
@@ -153,6 +182,34 @@ function openMood(iso){
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function closeMood(){ document.getElementById('modal').classList.remove('show'); }
 
+// 情绪强度滑动条
+function onIntensityChange(val){
+  const pct = parseInt(val);
+  const fill = document.getElementById('intensity-fill');
+  const text = document.getElementById('intensity-text');
+  const levelInput = document.getElementById('f-intensity-level');
+  const pctInput = document.getElementById('f-intensity-percent');
+  if(!fill || !text || !levelInput || !pctInput) return;
+  fill.style.width = pct + '%';
+  pctInput.value = pct;
+  let level, label;
+  if(pct <= 20){ level=1; label='略微'; }
+  else if(pct <= 45){ level=2; label='有点'; }
+  else if(pct <= 70){ level=3; label='相当'; }
+  else{ level=4; label='十分'; }
+  levelInput.value = level;
+  text.textContent = label;
+}
+function updateIntensityColor(color){
+  var row = document.getElementById('intensity-row');
+  var fill = document.getElementById('intensity-fill');
+  var slider = document.getElementById('intensity-slider');
+  if(!row || !fill || !slider) return;
+  row.style.display = 'block';
+  fill.style.background = color;
+  onIntensityChange(slider.value);
+}
+
 // 访客：拦截提交，写本地，再去推荐页
 if(!IS_AUTHED){
   document.getElementById('mood-form').addEventListener('submit', function(e){
@@ -161,8 +218,8 @@ if(!IS_AUTHED){
     const mood = (document.querySelector('input[name=mood]:checked')||{}).value;
     if(!mood) return;
     const note = document.getElementById('f-note').value.trim();
-    const o = load(); o[iso] = {mood, note}; store(o);
-    location.href = `/result/?mood=${mood}&date=${iso}`;
+    const o = load(); o[iso] = {mood, note, intensity_level: 2, intensity_percent: 50}; store(o);
+    location.href = `/result/?mood=${mood}&date=${iso}&intensity_level=2&intensity_percent=50`;
   });
 }
 
