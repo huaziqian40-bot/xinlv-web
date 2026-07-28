@@ -106,6 +106,7 @@
       <div class="intensity-bar-wrap">
         <div class="intensity-track" id="intensity-track">
           <div class="intensity-fill" id="intensity-fill" style="width:50%"></div>
+          <div class="intensity-thumb" id="intensity-thumb"></div>
           <input type="range" min="0" max="100" value="50" class="intensity-slider"
                  id="intensity-slider" oninput="onIntensityChange(this.value)">
         </div>
@@ -144,6 +145,8 @@ function openMood(iso){
   if(pi) pi.value = 50;
   var fi = document.getElementById('intensity-fill');
   if(fi) fi.style.width = '50%';
+  var th = document.getElementById('intensity-thumb');
+  if(th) th.style.left = 'calc(50% - 9px)';
   var ti = document.getElementById('intensity-text');
   if(ti) ti.textContent = '有点';
   var ir = document.getElementById('intensity-row');
@@ -189,8 +192,10 @@ function onIntensityChange(val){
   const text = document.getElementById('intensity-text');
   const levelInput = document.getElementById('f-intensity-level');
   const pctInput = document.getElementById('f-intensity-percent');
+  const thumb = document.getElementById('intensity-thumb');
   if(!fill || !text || !levelInput || !pctInput) return;
   fill.style.width = pct + '%';
+  if(thumb) thumb.style.left = `calc(${pct}% - 9px)`;
   pctInput.value = pct;
   let level, label;
   if(pct <= 20){ level=1; label='略微'; }
@@ -204,9 +209,11 @@ function updateIntensityColor(color){
   var row = document.getElementById('intensity-row');
   var fill = document.getElementById('intensity-fill');
   var slider = document.getElementById('intensity-slider');
+  var thumb = document.getElementById('intensity-thumb');
   if(!row || !fill || !slider) return;
   row.style.display = 'block';
   fill.style.background = color;
+  if(thumb) thumb.style.borderColor = color;
   onIntensityChange(slider.value);
 }
 
@@ -218,8 +225,10 @@ if(!IS_AUTHED){
     const mood = (document.querySelector('input[name=mood]:checked')||{}).value;
     if(!mood) return;
     const note = document.getElementById('f-note').value.trim();
-    const o = load(); o[iso] = {mood, note, intensity_level: 2, intensity_percent: 50}; store(o);
-    location.href = `/result/?mood=${mood}&date=${iso}&intensity_level=2&intensity_percent=50`;
+    const intensityLevel = document.getElementById('f-intensity-level').value;
+    const intensityPercent = document.getElementById('f-intensity-percent').value;
+    const o = load(); o[iso] = {mood, note, intensity_level: parseInt(intensityLevel), intensity_percent: parseInt(intensityPercent)}; store(o);
+    location.href = `/result/?mood=${mood}&date=${iso}&intensity_level=${intensityLevel}&intensity_percent=${intensityPercent}`;
   });
 }
 

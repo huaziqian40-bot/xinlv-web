@@ -66,7 +66,7 @@ a{color:var(--accent-d); text-decoration:none; transition:color .18s ease}
   padding:.3rem .8rem; font-size:.85rem}
 
 /* 弹窗 */
-.modal-bg{position:fixed; inset:0; background:rgba(40,35,30,.45); display:none;
+.modal-bg{position:fixed; inset:0; background:transparent; display:none;
   align-items:center; justify-content:center; z-index:50; padding:1rem}
 .modal-bg.show{display:flex}
 .modal{background:var(--card); border-radius:18px; padding:1.5rem; width:100%; max-width:440px;
@@ -694,7 +694,7 @@ button.ghost:hover{background:rgba(124,154,146,.08); border-color:var(--accent-l
 .ym-cell.has:hover{transform:scale(1.15)}
 
 /* —— 弹窗：背景磨砂，聚焦内容 —— */
-.modal-bg,.crisis-bg{backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+.modal-bg,.crisis-bg{backdrop-filter:none; -webkit-backdrop-filter:none}
 
 /* —— 树洞聊天气泡：用户气泡渐变+投影，AI 气泡细描边 —— */
 .bubble.user{background:var(--grad-warm); box-shadow:0 4px 14px rgba(95,125,117,.25)}
@@ -750,9 +750,9 @@ input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
 .intensity-slider{position:absolute; left:0; top:0; width:100%; height:100%; opacity:0; cursor:pointer;
   -webkit-appearance:none; appearance:none; margin:0; z-index:2}
 /* 自定义滑块手柄（可视化反馈） */
-.intensity-track::after{content:''; position:absolute; left:50%; top:50%; width:18px; height:18px;
-  border-radius:50%; background:#fff; border:2px solid var(--accent); transform:translate(-50%,-50%);
-  box-shadow:0 2px 6px rgba(0,0,0,.15); pointer-events:none; z-index:1}
+.intensity-thumb{position:absolute; left:calc(50% - 9px); top:50%; width:18px; height:18px;
+  border-radius:50%; background:#fff; border:2px solid var(--accent); transform:translate(0,-50%);
+  box-shadow:0 2px 6px rgba(0,0,0,.15); pointer-events:none; z-index:1; transition:left .1s ease}
 
 /* --- 情绪影响全站视觉：背景叠加层 --- */
 .mood-overlay{position:fixed; inset:0; pointer-events:none; z-index:0; transition:background .6s ease}
