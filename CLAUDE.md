@@ -132,6 +132,12 @@ moodsite/
 - **Git Bash 里给 `git worktree add` 传路径要用 Windows 风格**：2026-07-25 实证，传 `/d/xxx` 会被错误解析成 `D:\d\xxx`（盘符下多套一层 d 目录），且后续 `cd` 找不到。传 `D:\\xxx` 才正确。
 - **历史版本归档在两个孤儿分支**：`history`（网页端 21 个提交：2 个早期原型 html + 16 个 zip 快照 + 工具脚本/文档，提交日期=源文件 mtime）和 `history-clients`（客户端壳 3 个快照），源文件在 `D:\moodsite\userinput0724`。与 master 无共同祖先，仅作存档查阅用（`git log history` / `git show history:<文件>`），不要 merge 进 master。
 - **API 的 `?since=` 参数必须 URL 编码**：ISO8601 时间串里的 `+08:00` 中 `+` 号不编码会被当成空格，服务端解析失败就退化成全量拉取（真实踩过，测试里因此挂过一次）。客户端发参数一律走编码后的 query string。
+- **`updateIntensityColor`/`onIntensityChange` 等被多处调用的 JS 函数必须定义在 `base.html`**（2026-07-29 实证）：home.html 的 radio 按钮 `onchange` 引用了这两个函数，但 result.html 没有覆盖 `{% block script %}`，导致 ReferenceError。所有被多个页面引用的全局函数（如强度滑块相关）都放 `base.html` 的 `{% block script %}` 之后。
+- **每次改动代码后必须更新生产环境 + 提交 git**（2026-07-29 定）：任何代码改动完成后，必须执行以下步骤才能标记完成：
+  1. 若改了网页端代码（Django 模板/视图/静态文件等）：`collectstatic` → kill 旧 waitress → 启动新 waitress → curl 验证页面内容包含新特征
+  2. 若改了客户端代码（安卓/Windows）：重新打包（`./gradlew assembleRelease` / `mvn package jpackage:jpackage`）→ 更新 `C:\Users\Administrator\Desktop\clients\` 下的对应交付文件
+  3. 最后 `git add -A && git commit -m "..."` 提交到 master
+  4. 以上步骤不可跳过，不可留到"下次一起做"。
 - **给有存量的表加"唯一约束+callable默认值"的字段必须三步走**（迁移 0008 实证）：① AddField `null=True`（不带 unique/default）→ ② RunPython 逐条生成不同值 → ③ AlterField 加 `unique=True, default=callable`。直接一步加会让所有存量行拿到同一个默认值，migrate 时 `UNIQUE constraint failed`。这是对"不手写迁移文件"约定的合理例外——先 makemigrations 生成再手工拆成三步。
 - **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
 - **模板里用 `{% static %}` 必须自己在文件顶部 `{% load static %}`**：`{% extends %}` 不会继承父模板的 load（2026-07-27 实证：game.html 加水果贴图引用后整页 500，DEBUG=False 时日志无堆栈，用 `get_template('game.html').render({})` 在 shell 里复现才看到 TemplateSyntaxError）。
