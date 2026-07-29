@@ -180,6 +180,12 @@ python backup_db.py                     # 一次性备份到 backups/，保留�
 
 **已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"、**客户端 REST API v1**（2026-07-26：令牌登录/离线同步/目录/推荐/树洞/个人数据，16 个测试用例）。
 
+**客户端交付物**：`C:\Users\Administrator\Desktop\clients\` 目录存放客户端可执行文件，供直接下载安装。
+- `clients\安卓\心履-安卓-v1.0.2.apk` — 安卓 APK（release 签名包）
+- `clients\Windows\心履-Windows-v1.0.0.exe` — Windows 安装包（jpackage 输出）
+- 客户端源码仍在 `D:\moodsite\clients\`（git 仓库内），桌面目录只放打包好的交付文件。
+- 客户端代码改动时，重新打包后必须把新文件**复制到桌面 clients 目录覆盖旧文件**，再提交 git。
+
 **进行中（客户端计划，2026-07-26 定）**：做**原生本地客户端**（非 webview 壳），离线可用、联网与服务器同步，界面与网页端不同。技术选型：安卓端 Java 原生 + Room 本地库；桌面端 JavaFX 共享代码，jpackage 打 Windows exe / Mac dmg（Mac 也接受 HMCL 式 jar + 用户自装 Java）。MVP 范围：登录/记心情/日历/推荐/AI聊天（仅联网）/徽章；不做游戏、投稿、后台、i18n。注意站点是 http 无 HTTPS，安卓需 `usesCleartextTraffic="true"`。顺序：安卓 → 桌面。
 
 **待办**：HTTPS 未配置（`ENABLE_HTTPS`/`SECURE_COOKIES` 开关已预留）；树洞页部分 JS 动态文案（语音状态提示、危机弹窗）未接入 i18n，英文模式下仍显示中文；nssm 自启只有手册未验证已配置；SQLite 若用户量明显增长需评估迁移 PostgreSQL。
