@@ -73,6 +73,39 @@
       <strong>{{ site.crisis_hotline|default:"12356" }}</strong>{{ T.crisis_note_2 }}</p>
   </footer>
   {% block script %}{% endblock %}
+  <script>
+  // 全局函数：情绪强度滑块（在所有页面可用，元素不存在时由空值检查兜底）
+  function onIntensityChange(val){
+    const pct = parseInt(val);
+    const fill = document.getElementById('intensity-fill');
+    const text = document.getElementById('intensity-text');
+    const levelInput = document.getElementById('f-intensity-level');
+    const pctInput = document.getElementById('f-intensity-percent');
+    const thumb = document.getElementById('intensity-thumb');
+    if(!fill || !text || !levelInput || !pctInput) return;
+    fill.style.width = pct + '%';
+    if(thumb) thumb.style.left = 'calc(' + pct + '% - 9px)';
+    pctInput.value = pct;
+    var level, label;
+    if(pct <= 20){ level=1; label='略微'; }
+    else if(pct <= 45){ level=2; label='有点'; }
+    else if(pct <= 70){ level=3; label='相当'; }
+    else{ level=4; label='十分'; }
+    levelInput.value = level;
+    text.textContent = label;
+  }
+  function updateIntensityColor(color){
+    var row = document.getElementById('intensity-row');
+    var fill = document.getElementById('intensity-fill');
+    var slider = document.getElementById('intensity-slider');
+    var thumb = document.getElementById('intensity-thumb');
+    if(!row || !fill || !slider) return;
+    row.style.display = 'block';
+    fill.style.background = color;
+    if(thumb) thumb.style.borderColor = color;
+    onIntensityChange(slider.value);
+  }
+  </script>
   {% if latest_mood and latest_mood.key == 'sad' or latest_mood and latest_mood.key == 'lonely' or latest_mood and latest_mood.key == 'numb' %}
   <script>
   (function(){
