@@ -260,7 +260,7 @@ def result(request):
         if request.user.is_authenticated and date_str:
             try:
                 e = MoodEntry.objects.filter(
-                    user=request.user, date=dt.date.fromisoformat(date_str)).first()
+                    user=request.user, date=dt.date.fromisoformat(date_str)).order_by('-at', '-created_at').first()
                 if e:
                     mood, note = e.mood, e.note
                     intensity_level = e.intensity_level
@@ -273,7 +273,7 @@ def result(request):
     if request.user.is_authenticated and date_str and not note:
         try:
             e = MoodEntry.objects.filter(
-                user=request.user, date=dt.date.fromisoformat(date_str)).first()
+                user=request.user, date=dt.date.fromisoformat(date_str)).order_by('-at', '-created_at').first()
             if e:
                 note = e.note
                 intensity_level = e.intensity_level
