@@ -1,0 +1,33 @@
+{% extends "manage/base.html" %}
+{% block n_users %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">{{ target.username }} 的 AI 树洞聊天记录</h1>
+<p class="muted">共 {{ chats|length }} 条消息 · 按时间倒序</p>
+
+<div class="m-card">
+<table class="u-table">
+  <thead>
+    <tr><th>时间</th><th>角色</th><th>内容</th></tr>
+  </thead>
+  <tbody>
+  {% for c in chats %}
+    <tr>
+      <td style="white-space:nowrap">{{ c.created_at|date:"Y-m-d H:i" }}</td>
+      <td>
+        {% if c.role == "user" %}
+          <span class="u-ok">用户</span>
+        {% else %}
+          <span class="u-tag admin">AI</span>
+        {% endif %}
+      </td>
+      <td style="max-width:400px;word-break:break-word">{{ c.content }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="3" class="muted">该用户还没有树洞聊天记录。</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<p><a href="/manage/users/" class="u-btn">← 返回用户管理</a></p>
+{% endblock %}

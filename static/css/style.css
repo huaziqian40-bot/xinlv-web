@@ -282,6 +282,8 @@ button.ghost.small{align-self:flex-start}
 .u-tag.admin{background:#7FA6E8}
 .u-ok{color:#3a8a5f}
 .u-bad{color:#c0392b}
+.u-link{color:var(--accent);text-decoration:none;margin-left:4px;font-size:.85em}
+.u-link:hover{text-decoration:underline}
 .u-actions{display:flex; flex-wrap:wrap; gap:.4rem}
 .u-actions form{display:inline}
 .u-btn{background:var(--bg); border:1.5px solid var(--line); border-radius:8px; padding:.3rem .7rem;

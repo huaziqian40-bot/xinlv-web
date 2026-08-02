@@ -187,3 +187,23 @@ def users(request):
             "chats": ChatMessage.objects.filter(user=u, role="user").count(),
         })
     return render(request, "manage/users.html", {"rows": rows, "me": me})
+
+
+@staff_required
+def user_moods(request, user_id):
+    """查看指定用户的心情记录"""
+    target = get_object_or_404(User, pk=user_id)
+    moods = MoodEntry.objects.filter(user=target).order_by("-created_at")
+    return render(request, "manage/user_moods.html", {
+        "target": target, "moods": moods,
+    })
+
+
+@staff_required
+def user_chats(request, user_id):
+    """查看指定用户的AI树洞聊天记录"""
+    target = get_object_or_404(User, pk=user_id)
+    chats = ChatMessage.objects.filter(user=target).order_by("-created_at")
+    return render(request, "manage/user_chats.html", {
+        "target": target, "chats": chats,
+    })

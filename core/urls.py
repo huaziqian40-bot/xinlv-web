@@ -59,4 +59,6 @@ urlpatterns = [
     path("manage/videos/", admin_views.videos, name="manage_videos"),
     path("manage/site/", admin_views.site, name="manage_site"),
     path("manage/users/", admin_views.users, name="manage_users"),
+    path("manage/users/<int:user_id>/moods/", admin_views.user_moods, name="manage_user_moods"),
+    path("manage/users/<int:user_id>/chats/", admin_views.user_chats, name="manage_user_chats"),
 ]

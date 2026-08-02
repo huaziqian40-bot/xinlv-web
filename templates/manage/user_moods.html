@@ -1,0 +1,36 @@
+{% extends "manage/base.html" %}
+{% block n_users %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">{{ target.username }} 的心情记录</h1>
+<p class="muted">共 {{ moods|length }} 条记录 · 按记录时间倒序</p>
+
+<div class="m-card">
+<table class="u-table">
+  <thead>
+    <tr><th>日期</th><th>时刻</th><th>心情</th><th>强度</th><th>备注</th></tr>
+  </thead>
+  <tbody>
+  {% for m in moods %}
+    <tr>
+      <td>{{ m.date|date:"Y-m-d" }}</td>
+      <td>{{ m.at|date:"H:i"|default:"—" }}</td>
+      <td>{{ m.get_mood_display }}</td>
+      <td>
+        {% if m.intensity_level == 1 %}略微
+        {% elif m.intensity_level == 2 %}有点
+        {% elif m.intensity_level == 3 %}相当
+        {% elif m.intensity_level == 4 %}十分
+        {% endif %}
+        （{{ m.intensity_percent }}%）
+      </td>
+      <td>{{ m.note|default:"—"|truncatechars:60 }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="muted">该用户还没有心情记录。</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<p><a href="/manage/users/" class="u-btn">← 返回用户管理</a></p>
+{% endblock %}

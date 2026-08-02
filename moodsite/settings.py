@@ -160,11 +160,13 @@ CSRF_COOKIE_SECURE = env_bool("SECURE_COOKIES", "False")
 
 # --- HTTPS 相关（有 HTTPS 时在 .env 打开；没有则保持关闭，避免把自己锁在门外） ---
 if env_bool("ENABLE_HTTPS", "False"):
-    SECURE_SSL_REDIRECT = True
+    # Cloudflare Tunnel 在边缘层处理 HTTPS，Django 不需要自己重定向
+    SECURE_SSL_REDIRECT = False
+    # 告诉 Django 来自 Cloudflare 的请求实际是 HTTPS（用于安全 cookie）
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # --- 上传大小限制（防止有人塞爆硬盘 / 内存） ---
 # 请求体（非文件字段）上限 5MB；单个上传文件默认走 FileField，本项限制表单整体

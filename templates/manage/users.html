@@ -19,8 +19,8 @@
       </td>
       <td>{{ row.u.date_joined|date:"Y-m-d" }}</td>
       <td>{{ row.u.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
-      <td>{{ row.moods }}</td>
-      <td>{{ row.chats }}</td>
+      <td>{{ row.moods }} <a href="/manage/users/{{ row.u.pk }}/moods/" class="u-link">查看</a></td>
+      <td>{{ row.chats }} <a href="/manage/users/{{ row.u.pk }}/chats/" class="u-link">查看</a></td>
       <td>{% if row.u.is_active %}<span class="u-ok">正常</span>{% else %}<span class="u-bad">已封禁</span>{% endif %}</td>
       <td class="u-actions">
         {% if row.u.pk == me.pk %}
