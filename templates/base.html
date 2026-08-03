@@ -26,6 +26,7 @@
       </nav>
     </div>
     <div class="nav-right">
+      <a class="acc-link" href="/download/">{{ T.download }}</a>
       <form method="post" action="/set-language/" class="lang-form">
         {% csrf_token %}
         <button name="lang" value="{% if LANG == 'en' %}zh{% else %}en{% endif %}" class="lang-btn">
@@ -51,6 +52,7 @@
     <a href="/" class="{% block tab_home %}{% endblock %}"><span class="ic">📅</span><span class="tb">{{ T.nav_calendar }}</span></a>
     <a href="/confidant/" class="{% block tab_conf %}{% endblock %}"><span class="ic">🌙</span><span class="tb">{{ T.nav_confidant }}</span></a>
     <a href="/game/" class="{% block tab_game %}{% endblock %}"><span class="ic">🍉</span><span class="tb">{{ T.nav_game }}</span></a>
+    <a href="/download/" class="{% block tab_download %}{% endblock %}"><span class="ic">📥</span><span class="tb">{{ T.download }}</span></a>
     {% if user.is_authenticated %}<a href="/contribute/" class="{% block tab_contrib %}{% endblock %}"><span class="ic">✍️</span><span class="tb">{{ T.nav_contribute }}</span></a>
     <a href="/me/" class="{% block tab_me %}{% endblock %}"><span class="ic">👤</span><span class="tb">{{ T.my_home }}</span></a>{% else %}
     <a href="/about/" class="{% block tab_about %}{% endblock %}"><span class="ic">ℹ️</span><span class="tb">{{ T.nav_about }}</span></a>{% endif %}

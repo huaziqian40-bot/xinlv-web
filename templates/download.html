@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ T.download_title }} - 心履{% endblock %}
+{% block content %}
+<div class="download-page">
+  <div class="download-hero">
+    <h1>{{ T.download_title }}</h1>
+    <p>{{ T.download_sub }}</p>
+  </div>
+
+  <div class="download-grid">
+    <!-- 安卓 -->
+    <div class="download-card">
+      <div class="dl-logo">
+        <img src="{% static 'images/Android-Logo.png' %}" alt="Android">
+      </div>
+      <h3>{{ T.download_android }}</h3>
+      <a href="{% static android_versions.0.1 %}" class="dl-btn" download>
+        {{ T.download_current }} {{ android_versions.0.0 }}
+      </a>
+      {% if android_versions|length > 1 %}
+      <div class="dl-old-versions">
+        <details>
+          <summary>{{ T.download_old_versions }}</summary>
+          <ul>
+            {% for ver, path in android_versions %}
+            {% if not forloop.first %}
+            <li><a href="{% static path %}">v{{ ver }}</a></li>
+            {% endif %}
+            {% endfor %}
+          </ul>
+        </details>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Windows -->
+    <div class="download-card">
+      <div class="dl-logo">
+        <img src="{% static 'images/Windows-Logo.png' %}" alt="Windows">
+      </div>
+      <h3>{{ T.download_windows }}</h3>
+      <a href="{% static windows_versions.0.1 %}" class="dl-btn" download>
+        {{ T.download_current }} {{ windows_versions.0.0 }}
+      </a>
+      {% if windows_versions|length > 1 %}
+      <div class="dl-old-versions">
+        <details>
+          <summary>{{ T.download_old_versions }}</summary>
+          <ul>
+            {% for ver, path in windows_versions %}
+            {% if not forloop.first %}
+            <li><a href="{% static path %}">v{{ ver }}</a></li>
+            {% endif %}
+            {% endfor %}
+          </ul>
+        </details>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- macOS -->
+    <div class="download-card disabled">
+      <div class="dl-logo">
+        <img src="{% static 'images/Apple-Logo.png' %}" alt="macOS">
+      </div>
+      <h3>{{ T.download_macos }}</h3>
+      <span class="dl-btn disabled">{{ T.download_developing }}</span>
+    </div>
+
+    <!-- Linux -->
+    <div class="download-card disabled">
+      <div class="dl-logo">
+        <img src="{% static 'images/Linux-Logo.png' %}" alt="Linux">
+      </div>
+      <h3>{{ T.download_linux }}</h3>
+      <span class="dl-btn disabled">{{ T.download_developing }}</span>
+    </div>
+  </div>
+
+  <p class="dl-other-note">{{ T.download_other }}</p>
+</div>
+{% endblock %}

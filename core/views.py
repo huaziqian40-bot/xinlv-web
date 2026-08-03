@@ -304,6 +304,28 @@ def disclaimer(request):
     return render(request, "disclaimer.html", {"custom_html": custom_html})
 
 
+def download(request):
+    """下载页面：展示各平台客户端下载链接。"""
+    android_versions = [
+        ("1.2.23", "download/android/xinlv-1.2.23.apk"),
+        ("1.2.22", "download/android/xinlv-1.2.22.apk"),
+        ("1.2.21", "download/android/xinlv-1.2.21.apk"),
+        ("1.2.20", "download/android/xinlv-1.2.20.apk"),
+        ("1.2.19", "download/android/xinlv-1.2.19.apk"),
+        ("1.2.18", "download/android/xinlv-1.2.18.apk"),
+        ("1.2.17", "download/android/xinlv-1.2.17.apk"),
+        ("1.2.11", "download/android/xinlv-1.2.11.apk"),
+        ("1.2.10", "download/android/xinlv-1.2.10.apk"),
+    ]
+    windows_versions = [
+        ("1.0.2", "download/windows/xinlv-1.0.2.exe"),
+    ]
+    return render(request, "download.html", {
+        "android_versions": android_versions,
+        "windows_versions": windows_versions,
+    })
+
+
 def game(request):
     """情绪小西瓜：仿合成大西瓜的放松小游戏，纯前端 Canvas 实现，不涉及数据存储。"""
     return render(request, "game.html")

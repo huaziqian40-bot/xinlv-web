@@ -15,7 +15,7 @@
 "心履"（曾用名"心情树洞""念今心"）是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
 按情绪推荐音乐/建议/小知识/视频、与 AI 树洞（DeepSeek）文字+语音聊天（内置关键词危
 机硬拦截）、连胜徽章、用户主页、用户投稿+AI审核、后台管理、中英双语、放松小游戏。
-部署在开发者 Windows PC 上，经内网穿透对外提供 http 访问（无 HTTPS）。
+部署在开发者 Windows PC 上，经 Cloudflare Tunnel 对外提供 HTTPS 访问（本地到服务器仍为 HTTP）。
 
 **磁盘布局（2026-07-25 定）**：D 盘根目录只有 `D:\moodsite`（本项目总文件夹）和 `D:\server`（用户其他服务，勿动）。本项目生产环境在 **`D:\moodsite\product`**（git 仓库根）；总文件夹下还有 `userinput0724`（历史版本源文件）、`moodsite_recovered`（恢复中间产物）、`tmp`、`moodsitelogsedge_profile` 和聊天记录导出文件。
 

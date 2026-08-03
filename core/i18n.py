@@ -57,6 +57,13 @@ STRINGS = {
         "obtained": "已获得", "still_need": "还差", "keep_going": "继续加油！",
         "current_streak_pre": "你当前连续记录", "current_streak_post": "天，继续加油！",
         "lang_name": "中文",
+        # 下载页面
+        "download": "下载客户端", "download_title": "下载心履",
+        "download_sub": "随时随地记录心情，与 AI 树洞倾诉。",
+        "download_android": "安卓版", "download_windows": "Windows 版",
+        "download_macos": "macOS 版", "download_linux": "Linux 版",
+        "download_developing": "正在开发中", "download_other": "其他平台敬请期待",
+        "download_old_versions": "历史版本", "download_current": "当前版本",
         # 情绪强度
         "intensity": "强度", "intensity_slight": "略微", "intensity_some": "有点",
         "intensity_quite": "相当", "intensity_very": "十分",
@@ -109,6 +116,13 @@ STRINGS = {
         "obtained": "Obtained", "still_need": "need", "keep_going": "keep going!",
         "current_streak_pre": "Your current streak is", "current_streak_post": "days. Keep going!",
         "lang_name": "English",
+        # 下载页面
+        "download": "Download App", "download_title": "Download XinLv",
+        "download_sub": "Record your moods anytime, anywhere. Chat with the AI Tree Hole.",
+        "download_android": "Android", "download_windows": "Windows",
+        "download_macos": "macOS", "download_linux": "Linux",
+        "download_developing": "Under development", "download_other": "More platforms coming soon",
+        "download_old_versions": "Previous versions", "download_current": "Current version",
         # 情绪强度
         "intensity": "Intensity", "intensity_slight": "Slightly", "intensity_some": "Somewhat",
         "intensity_quite": "Quite", "intensity_very": "Very",

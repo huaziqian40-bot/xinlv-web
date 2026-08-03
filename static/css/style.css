@@ -788,3 +788,30 @@ input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
 .intensity-bar .ib-track{flex:1; height:8px; background:var(--bg); border-radius:999px; overflow:hidden; border:1px solid var(--line)}
 .intensity-bar .ib-fill{height:100%; border-radius:999px; transition:width .3s ease}
 .intensity-bar .ib-text{font-size:.82rem; color:var(--accent-d); font-weight:600; white-space:nowrap}
+
+/* ==== 下载页面 ==== */
+.download-page{padding:1rem 0 3rem}
+.download-hero{text-align:center; margin:1.5rem 0 2.5rem}
+.download-hero h1{font-size:1.6rem; margin:.2rem 0; color:var(--ink)}
+.download-hero p{color:var(--muted); margin:.4rem 0 0; font-size:.95rem}
+.download-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.2rem; max-width:900px; margin:0 auto}
+.download-card{background:var(--card); border-radius:var(--radius); padding:1.8rem 1.2rem; text-align:center;
+  box-shadow:var(--shadow); transition:transform .2s ease,box-shadow .2s ease}
+.download-card:hover{transform:translateY(-3px); box-shadow:var(--shadow-hover)}
+.download-card.disabled{opacity:.55; filter:grayscale(.6)}
+.download-card.disabled:hover{transform:none; box-shadow:var(--shadow)}
+.dl-logo{height:80px; display:flex; align-items:center; justify-content:center; margin-bottom:.8rem}
+.dl-logo img{max-height:80px; max-width:100%; object-fit:contain}
+.download-card h3{font-size:1.05rem; margin:.4rem 0 .8rem; color:var(--ink)}
+.dl-btn{display:inline-block; padding:.55rem 1.4rem; border-radius:999px; background:var(--grad-warm);
+  color:#fff; font-weight:600; font-size:.9rem; transition:opacity .2s; cursor:pointer; border:none}
+.dl-btn:hover{opacity:.85}
+.dl-btn.disabled{background:var(--line); color:var(--muted); cursor:not-allowed}
+.dl-old-versions{margin-top:.8rem; text-align:left}
+.dl-old-versions details{font-size:.82rem}
+.dl-old-versions summary{cursor:pointer; color:var(--accent-d); font-weight:500; padding:.2rem 0}
+.dl-old-versions ul{list-style:none; padding:0; margin:.4rem 0 0}
+.dl-old-versions li{padding:.15rem 0}
+.dl-old-versions li a{color:var(--muted)}
+.dl-old-versions li a:hover{color:var(--accent-d)}
+.dl-other-note{text-align:center; color:var(--muted); font-size:.85rem; margin-top:2rem}
