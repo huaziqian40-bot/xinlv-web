@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" href="{% static 'images/favicon-180.png' %}">
   <link rel="apple-touch-icon" href="{% static 'images/favicon-180.png' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block style %}{% endblock %}
 </head>
 <body class="{% if latest_mood %}mood-{{ latest_mood.key }} mood-intensity-{{ latest_mood.intensity_level }}{% endif %}">
   <!-- 情绪氛围叠加层 -->
