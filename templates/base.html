@@ -71,6 +71,12 @@
       {% if site.contact_wechat %}<span>微信：{{ site.contact_wechat }}</span>{% endif %}
       {% if site.contact_bilibili %}<span>B站：<a href="{{ site.contact_bilibili }}" target="_blank" rel="noopener">点击进入主页 ↗</a></span>{% endif %}
     </div>
+    <div class="foot-repos">
+      <strong>{{ T.github_source }}</strong>
+      <span><a href="https://github.com/huaziqian40-bot/xinlv-web" target="_blank" rel="noopener">{{ T.github_web }}</a></span>
+      <span><a href="https://github.com/huaziqian40-bot/xinlv-android" target="_blank" rel="noopener">{{ T.github_android }}</a></span>
+      <span><a href="https://github.com/huaziqian40-bot/xinlv-windows" target="_blank" rel="noopener">{{ T.github_windows }}</a></span>
+    </div>
     <p>{{ T.foot_slogan }} &nbsp;|&nbsp; {{ T.foot_disclaimer }} &nbsp;<a href="/disclaimer/">{{ T.disclaimer_link }}</a></p>
     <p class="crisis">{{ T.crisis_note_1 }}
       <strong>{{ site.crisis_hotline|default:"12356" }}</strong>{{ T.crisis_note_2 }}</p>

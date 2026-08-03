@@ -26,6 +26,15 @@
 .dl-old-versions li a{color:#8a847e}
 .dl-old-versions li a:hover{color:#5f7d75}
 .dl-other-note{text-align:center; color:#8a847e; font-size:.85rem; margin-top:2rem}
+.github-section{max-width:600px; margin:2.5rem auto 0}
+.github-card{background:#ffffff; border-radius:16px; padding:1.8rem 1.2rem; text-align:center; box-shadow:0 6px 24px rgba(60,50,40,.07)}
+.github-card-icon{font-size:2rem; margin-bottom:.4rem}
+.github-card h3{font-size:1.1rem; margin:.2rem 0 .3rem; color:#2e2b29}
+.github-card p{color:#8a847e; font-size:.85rem; margin:0 0 1rem}
+.github-btn-row{display:flex; flex-wrap:wrap; justify-content:center; gap:.6rem}
+.github-btn{display:inline-block; padding:.45rem 1rem; border-radius:999px; background:#7c9a92; color:#fff; font-weight:600; font-size:.85rem; text-decoration:none; transition:opacity .2s; cursor:pointer; border:none}
+.github-btn:hover{opacity:.85; color:#fff}
+.github-btn.disabled{background:#eae4db; color:#8a847e; cursor:not-allowed}
 </style>
 {% endblock %}
 {% block content %}
@@ -106,5 +115,21 @@
   </div>
 
   <p class="dl-other-note">{{ T.download_other }}</p>
+
+  <!-- GitHub 项目源码卡片 -->
+  <div class="github-section">
+    <div class="github-card">
+      <div class="github-card-icon">📂</div>
+      <h3>{{ T.github_source }}</h3>
+      <p>{{ T.github_desc }}</p>
+      <div class="github-btn-row">
+        <a href="https://github.com/huaziqian40-bot/xinlv-web" target="_blank" rel="noopener" class="github-btn">{{ T.github_web }}</a>
+        <a href="https://github.com/huaziqian40-bot/xinlv-android" target="_blank" rel="noopener" class="github-btn">{{ T.github_android }}</a>
+        <a href="https://github.com/huaziqian40-bot/xinlv-windows" target="_blank" rel="noopener" class="github-btn">{{ T.github_windows }}</a>
+        <span class="github-btn disabled">{{ T.github_macos }}</span>
+        <span class="github-btn disabled">{{ T.github_linux }}</span>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

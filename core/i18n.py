@@ -64,6 +64,15 @@ STRINGS = {
         "download_macos": "macOS 版", "download_linux": "Linux 版",
         "download_developing": "正在开发中", "download_other": "其他平台敬请期待",
         "download_old_versions": "历史版本", "download_current": "当前版本",
+        # 项目源码
+        "github_source": "项目源码",
+        "github_visit": "访问 GitHub 下载源代码",
+        "github_desc": "心履的所有代码都在 GitHub 上开源，欢迎访问。",
+        "github_web": "网页端",
+        "github_android": "安卓客户端",
+        "github_windows": "Windows 客户端",
+        "github_macos": "macOS 客户端",
+        "github_linux": "Linux 客户端",
         # 情绪强度
         "intensity": "强度", "intensity_slight": "略微", "intensity_some": "有点",
         "intensity_quite": "相当", "intensity_very": "十分",
@@ -123,6 +132,15 @@ STRINGS = {
         "download_macos": "macOS", "download_linux": "Linux",
         "download_developing": "Under development", "download_other": "More platforms coming soon",
         "download_old_versions": "Previous versions", "download_current": "Current version",
+        # 项目源码
+        "github_source": "Source Code",
+        "github_visit": "Get source code on GitHub",
+        "github_desc": "All Xinlv source code is open-source on GitHub.",
+        "github_web": "Web App",
+        "github_android": "Android",
+        "github_windows": "Windows",
+        "github_macos": "macOS",
+        "github_linux": "Linux",
         # 情绪强度
         "intensity": "Intensity", "intensity_slight": "Slightly", "intensity_some": "Somewhat",
         "intensity_quite": "Quite", "intensity_very": "Very",
