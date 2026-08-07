@@ -36,6 +36,7 @@
 </div>
 
 <h2 class="pf-section">{{ T.mood_footprint }}</h2>
+{% if own %}
 <div class="pf-feed">
   {% for e in entries %}
   <div class="feed-item" style="border-color:{{ e.meta.color }}">
@@ -50,4 +51,7 @@
   <p class="muted">{{ T.no_records }}</p>
   {% endfor %}
 </div>
+{% else %}
+<p class="muted">{{ T.footprint_private }}</p>
+{% endif %}
 {% endblock %}

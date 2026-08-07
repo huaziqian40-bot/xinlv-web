@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from . import views, admin_views, auth_views as my_auth, feature_views, api
+from . import views, admin_views, auth_views as my_auth, feature_views, api, ratelimit
 
 urlpatterns = [
     # ---- 客户端 REST API（安卓/桌面，Bearer Token 认证）----
@@ -47,7 +47,7 @@ urlpatterns = [
     path("confidant/tts/", views.tts_speak, name="tts_speak"),
 
     # ---- 用户认证（极简：账号+密码）----
-    path("login/", auth_views.LoginView.as_view(
+    path("login/", my_auth.RateLimitedLoginView.as_view(
         template_name="registration/login.html", redirect_authenticated_user=True), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("register/", my_auth.register, name="register"),

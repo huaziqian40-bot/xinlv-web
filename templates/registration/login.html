@@ -4,7 +4,7 @@
 <div class="auth-card">
   <h1>登录</h1>
   <p class="muted">{{ T.login_sub }}</p>
-  {% if form.errors %}<div class="auth-err">账号或密码不对，再试一次。</div>{% endif %}
+  {% if rate_limited %}<div class="auth-err">尝试太频繁了，请过几分钟再试。</div>{% elif form.errors %}<div class="auth-err">账号或密码不对，再试一次。</div>{% endif %}
   <form method="post" action="/login/">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">

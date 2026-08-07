@@ -8,11 +8,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .models import (MoodEntry, UserProfile, UserContribution,
                      Song, Activity, PsychologyTip, BilibiliVideo,
-                     MOODS, MOOD_MAP, compute_streak_and_badges)
+                     MOODS, MOOD_KEYS, MOOD_MAP, compute_streak_and_badges)
 from . import ratelimit, limits
 
 User = get_user_model()
@@ -37,10 +38,12 @@ def profile_public(request, username):
 def _render_profile(request, target, own):
     prof = get_profile(target)
     streak, badges = compute_streak_and_badges(target)
-    # 情绪记录（仿朋友圈/笔记：时间倒序）
-    entries = list(MoodEntry.objects.filter(user=target).order_by("-date", "-at")[:50])
-    for e in entries:
-        e.meta = MOOD_MAP.get(e.mood, {})
+    # 情绪记录仅本人可见，其他人看不到具体记录
+    entries = []
+    if own:
+        entries = list(MoodEntry.objects.filter(user=target).order_by("-date", "-at")[:50])
+        for e in entries:
+            e.meta = MOOD_MAP.get(e.mood, {})
     total = MoodEntry.objects.filter(user=target).count()
     return render(request, "profile.html", {
         "target": target, "prof": prof, "own": own,
@@ -108,17 +111,19 @@ def contribute(request):
             messages.error(request, "提交太频繁了，请过几分钟再试。")
             return redirect("contribute")
         kind = request.POST.get("kind")
-        title = request.POST.get("title", "").strip()
-        content = request.POST.get("content", "").strip()
-        moods = ",".join(request.POST.getlist("moods"))
-        source = request.POST.get("source", "").strip()
+        title = request.POST.get("title", "").strip()[:200]
+        content = request.POST.get("content", "").strip()[:4000]
+        source = request.POST.get("source", "").strip()[:200]
         audio = request.FILES.get("audio")
 
         # 小知识默认在正面情绪展示，不需要选情绪；出处栏仅小知识有
         if kind == "tip":
             moods = ""
+            source = request.POST.get("source", "").strip()[:200]
         else:
             source = ""
+            # 只收白名单内的合法情绪键，防任意字段注入
+            moods = ",".join(m for m in request.POST.getlist("moods") if m in MOOD_KEYS)
 
         if kind not in dict(UserContribution.KIND_CHOICES):
             messages.error(request, "请选择类型。")
@@ -129,6 +134,14 @@ def contribute(request):
                 messages.error(request, "请选择要上传的音频文件。")
                 return redirect("contribute")
             err = limits.check_audio(audio)
+            if err:
+                messages.error(request, err)
+                return redirect("contribute")
+        elif kind == "video":
+            if not content:
+                messages.error(request, "请填写视频链接。")
+                return redirect("contribute")
+            err = limits.check_http_url(content)
             if err:
                 messages.error(request, err)
                 return redirect("contribute")
@@ -143,7 +156,7 @@ def contribute(request):
             c.audio = audio
             c.save()
 
-        review_text = content or (title or audio.name if audio else "")
+        review_text = content or title or (audio.name if audio else "")
         verdict, reason = ai_review(c.get_kind_display(), title, review_text, moods)
         c.ai_reason = reason
         if verdict == "pass":
@@ -151,9 +164,8 @@ def contribute(request):
             _publish_contribution(c)
             messages.success(request, "AI 审核通过，已发布，谢谢你的分享！")
         elif verdict == "fail":
-            c.status = "rejected"
-            messages.error(request, f"AI 审核未通过：{reason}。已转管理员复审。")
             c.status = "pending_admin"   # 未过也给人工兜底
+            messages.error(request, f"AI 审核未通过：{reason}。已转管理员复审。")
         else:
             c.status = "pending_admin"
             messages.info(request, "已提交，等待管理员审核。")
@@ -217,7 +229,11 @@ def set_language(request):
     request.session["lang"] = lang
     if request.user.is_authenticated:
         prof = get_profile(request.user); prof.language = lang; prof.save()
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    # 防 Referer 开放重定向：只允许站内跳转
+    ref = request.META.get("HTTP_REFERER", "/")
+    if not ref.startswith("/") and not url_has_allowed_host_and_scheme(ref, allowed_hosts=None):
+        ref = "/"
+    return redirect(ref or "/")
 
 
 def badges_page(request):

@@ -35,7 +35,7 @@ STRINGS = {
         # 主页
         "streak": "连续记录", "days": "天", "badges": "徽章", "total_records": "累计记录",
         "edit_profile": "编辑资料", "bio": "简介", "avatar": "头像", "save": "保存",
-        "mood_footprint": "情绪足迹", "no_records": "还没有情绪记录。",
+        "mood_footprint": "情绪足迹", "footprint_private": "情绪足迹仅本人可见", "no_records": "还没有情绪记录。",
         # 上传
         "contribute_title": "分享给大家",
         "contribute_sub": "你的心理小知识、舒缓建议、音乐或视频，经审核后会加入网站。",
@@ -106,7 +106,7 @@ STRINGS = {
         "clear_chat": "Clear chat", "input_placeholder": "Say something… (Enter to send, Shift+Enter for a new line)",
         "streak": "Streak", "days": "days", "badges": "Badges", "total_records": "Total records",
         "edit_profile": "Edit profile", "bio": "Bio", "avatar": "Avatar", "save": "Save",
-        "mood_footprint": "Mood history", "no_records": "No mood records yet.",
+        "mood_footprint": "Mood history", "footprint_private": "Mood history is private", "no_records": "No mood records yet.",
         "contribute_title": "Share with others",
         "contribute_sub": "Your tips, activities, music or videos will join the site after review.",
         "kind": "Type", "title": "Title", "optional": "(optional)", "content": "Content",

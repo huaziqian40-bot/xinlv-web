@@ -14,6 +14,9 @@ import json
 from functools import wraps
 
 from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.db import IntegrityError
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -26,6 +29,8 @@ from . import recommendations, deepseek, crisis, ratelimit
 
 API_VERSION = "v1"
 PUSH_BATCH_LIMIT = 500        # 单次推送最多条数，防恶意大包
+NOTE_MAX = 2000               # 备注长度上限
+_username_validator = UnicodeUsernameValidator()
 
 
 # ---------- 基础工具 ----------
@@ -111,6 +116,9 @@ def login(request):
         return _err("请求格式错误")
     username = (data.get("username") or "").strip()
     password = data.get("password") or ""
+    # 类型安全防护：非字符串不处理
+    if not isinstance(username, str) or not isinstance(password, str):
+        return _err("账号和密码格式不正确")
     device = (data.get("device") or "")[:100]
     if not username or not password:
         return _err("请输入账号和密码")
@@ -138,17 +146,26 @@ def register(request):
     password = data.get("password") or ""
     device = (data.get("device") or "")[:100]
     agreed = data.get("agree") is True
+    if not isinstance(username, str) or not isinstance(password, str):
+        return _err("账号和密码格式不正确")
     if not username or not password:
         return _err("账号和密码都要填")
     if len(username) > 150:
         return _err("账号太长了")
+    try:
+        _username_validator(username)
+    except ValidationError:
+        return _err("账号只能包含字母、数字、下划线、点、@、+、- 和中文。")
     if get_user_model().objects.filter(username=username).exists():
         return _err("这个账号已经被注册了，换一个吧")
     if len(password) < 6:
         return _err("密码至少 6 位")
     if not agreed:
         return _err("请先阅读并同意《免责声明》")
-    user = get_user_model().objects.create_user(username=username, password=password)
+    try:
+        user = get_user_model().objects.create_user(username=username, password=password)
+    except IntegrityError:
+        return _err("这个账号已经被注册了，换一个吧")
     token = ApiToken.mint(user, device)
     return JsonResponse({"token": token.key, "username": user.username, "streak": 0})
 
@@ -214,7 +231,7 @@ def sync_push(request):
             if date > today:
                 errors.append({"index": i, "uuid": uid, "error": "不能记录未来的日期"})
                 continue
-        note = (item.get("note") or "").strip()
+        note = (item.get("note") or "").strip()[:NOTE_MAX]
         at = _parse_dt(item.get("at"))
         intensity_level = item.get("intensity_level", 2)
         if not isinstance(intensity_level, int) or intensity_level < 1 or intensity_level > 4:
@@ -227,6 +244,12 @@ def sync_push(request):
                 intensity_percent = 50
         intensity_percent = max(0, min(100, intensity_percent))
         incoming_ts = _parse_dt(item.get("updated_at")) or timezone.now()
+
+        # 全局 uuid 查询：先看这个 uuid 是否已被其他用户占用
+        existing_global = MoodEntry.all_objects.filter(uuid=uid).first()
+        if existing_global and existing_global.user != u:
+            errors.append({"index": i, "uuid": uid, "error": "uuid 冲突"})
+            continue
 
         existing = MoodEntry.all_objects.filter(user=u, uuid=uid).first()
         if existing:
@@ -246,11 +269,16 @@ def sync_push(request):
             if deleted:
                 skipped += 1      # 删除一条服务器上没有的记录，无需建墓碑
                 continue
-            MoodEntry.all_objects.create(
-                user=u, uuid=uid, date=date, at=at or timezone.now(),
-                mood=mood, note=note,
-                intensity_level=intensity_level, intensity_percent=intensity_percent)
-            saved += 1
+            try:
+                MoodEntry.all_objects.create(
+                    user=u, uuid=uid, date=date, at=at or timezone.now(),
+                    mood=mood, note=note,
+                    intensity_level=intensity_level, intensity_percent=intensity_percent)
+                saved += 1
+            except IntegrityError:
+                # 极端竞态：两个请求同时推同一个 uuid，兜底处理
+                errors.append({"index": i, "uuid": uid, "error": "uuid 冲突"})
+                continue
 
     return JsonResponse({
         "saved": saved, "updated": updated, "skipped": skipped,
@@ -330,7 +358,7 @@ def chat(request):
     if ratelimit.is_limited(request, "confidant"):
         return JsonResponse({"reply": "你发得有点快啦，休息一下下再聊好吗？"})
     data = _json_body(request)
-    text = ((data or {}).get("message") or "").strip()
+    text = ((data or {}).get("message") or "").strip()[:4000]
     if not text:
         return _err("空消息")
 

@@ -20,11 +20,15 @@ def env_list(key, default=""):
 
 
 # ---- 安全相关 ----
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "dev-only-key-please-change-me-in-production",
-)
+_DEV_SECRET = "dev-only-key-please-change-me-in-production"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _DEV_SECRET)
 DEBUG = env_bool("DJANGO_DEBUG", "True")
+
+# 生产环境（DEBUG=False）禁止使用内置开发密钥，否则会话/CSRF 可被伪造（拒绝启动是故意的）
+if not DEBUG and SECRET_KEY == _DEV_SECRET:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "生产环境必须通过 .env 设置 DJANGO_SECRET_KEY，禁止使用内置开发密钥。")
 
 # 内网穿透时必须把你的公网域名/IP 加进来。默认放开方便本地调试。
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "*") or ["*"]

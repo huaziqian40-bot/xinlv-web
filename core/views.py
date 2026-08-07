@@ -182,7 +182,7 @@ def save_mood(request):
     """登录用户保存心情到服务器（访客不会走这里，由前端 localStorage 处理）。"""
     date_str = request.POST.get("date", "")
     mood = request.POST.get("mood", "")
-    note = request.POST.get("note", "").strip()
+    note = request.POST.get("note", "").strip()[:2000]
     try:
         date = dt.date.fromisoformat(date_str)
     except ValueError:
@@ -228,13 +228,21 @@ def import_local(request):
         mood = (item or {}).get("mood")
         if mood not in MOOD_KEYS or date > dt.date.today():
             continue
-        MoodEntry.objects.update_or_create(
-            user=request.user, date=date,
-            defaults={"mood": mood, "note": (item.get("note") or "").strip(),
-                      "intensity_level": int(item.get("intensity_level", 2)),
-                      "intensity_percent": int(item.get("intensity_percent", 50))})
+        MoodEntry.objects.create(
+            user=request.user, date=date, mood=mood,
+            note=(str(item.get("note") or "").strip())[:2000],
+            intensity_level=max(1, min(4, _int(item.get("intensity_level"), 2))),
+            intensity_percent=max(0, min(100, _int(item.get("intensity_percent"), 50))))
         n += 1
     return JsonResponse({"imported": n})
+
+
+def _int(v, default):
+    """安全解析整数，失败返回默认值。"""
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return default
 
 
 def result(request):
@@ -378,6 +386,8 @@ def confidant_send(request):
         text = request.POST.get("message", "").strip()
     if not text:
         return JsonResponse({"error": "空消息"}, status=400)
+    # 消息长度上限 4000 字，防费用 DoS
+    text = text[:4000]
 
     owner = {"user": request.user} if request.user.is_authenticated else {"session_key": _sid(request)}
     ChatMessage.objects.create(role="user", content=text, **owner)
@@ -424,6 +434,9 @@ def tts_speak(request):
         text = json.loads(request.body).get("text", "")
     except (json.JSONDecodeError, AttributeError):
         text = request.POST.get("text", "")
+    # 类型安全防护：非字符串不处理
+    if not isinstance(text, str):
+        return JsonResponse({"error": "文字格式不正确。"}, status=200)
     audio, err = tts.synthesize(text)
     if err:
         return JsonResponse({"error": err}, status=200)

@@ -251,7 +251,12 @@ paintLocal();
     };
   });
 
-  function isoOf(d){ return d.toISOString().slice(0,10); }
+  function isoOf(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
   function guestNotice(pane){
     pane.innerHTML = '<p class="muted" style="text-align:center;padding:2rem">周/年视图需要<a href="/login/?next=/">登录</a>后查看（访客数据存在本机，仅支持月视图）。</p>';
   }
@@ -275,7 +280,7 @@ paintLocal();
       html += `<div class="wk-track">`;
       items.forEach(e=>{
         const topPct = (e.minutes / 1440) * 100;
-        html += `<div class="wk-dot" style="top:${topPct}%;border-color:${e.color}" title="${e.time} ${e.label}${e.note?(' · '+e.note):''}">${e.emoji}</div>`;
+        html += `<div class="wk-dot" style="top:${topPct}%;border-color:${e.color}" title="${e.time} ${e.label}${e.note?(' · '+escapeHtml(e.note)):''}">${e.emoji}</div>`;
       });
       html += `</div></div>`;
     });

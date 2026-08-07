@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Song, Activity, PsychologyTip, MoodEntry, ChatMessage, SiteSettings, BilibiliVideo, UserContribution, MOODS
+from . import limits
 
 User = get_user_model()
 AUDIO_EXT = {".mp3", ".m4a", ".flac", ".ogg", ".wav", ".aac"}
@@ -45,12 +46,16 @@ def videos(request):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "add":
-            title = request.POST.get("title", "").strip()
-            url = request.POST.get("url", "").strip()
+            title = request.POST.get("title", "").strip()[:200]
+            url = request.POST.get("url", "").strip()[:400]
             if title and url:
-                BilibiliVideo.objects.create(
-                    title=title, url=url, moods=",".join(request.POST.getlist("moods")))
-                messages.success(request, f"已添加视频：{title}")
+                err = limits.check_http_url(url)
+                if err:
+                    messages.error(request, err)
+                else:
+                    BilibiliVideo.objects.create(
+                        title=title, url=url, moods=",".join(request.POST.getlist("moods")))
+                    messages.success(request, f"已添加视频：{title}")
             else:
                 messages.error(request, "标题和链接都要填。")
         elif action == "delete":
