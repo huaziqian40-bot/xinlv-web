@@ -793,3 +793,14 @@ input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
 .intensity-bar .ib-fill{height:100%; border-radius:999px; transition:width .3s ease}
 .intensity-bar .ib-text{font-size:.82rem; color:var(--accent-d); font-weight:600; white-space:nowrap}
 
+/* ============ v12：下载页 macOS 安装说明弹窗（全屏遮罩，在 body 层） ============ */
+.modal-mask{display:none; position:fixed; top:0; right:0; bottom:0; left:0; z-index:9999; background:rgba(40,35,30,.45); backdrop-filter:blur(2px); justify-content:center; align-items:center; padding:1rem}
+.modal-mask.show{display:flex}
+.modal-card{background:#fff; border-radius:20px; max-width:480px; width:100%; padding:1.8rem 1.6rem; box-shadow:0 16px 48px rgba(40,35,30,.18); position:relative; max-height:90vh; overflow-y:auto}
+.modal-card h3{font-size:1.1rem; margin:0 0 .6rem; color:#2e2b29}
+.modal-card p{color:#6b6560; font-size:.88rem; line-height:1.6; margin:0 0 .8rem}
+.modal-card ol{padding-left:1.2rem; margin:0 0 .8rem}
+.modal-card ol li{color:#6b6560; font-size:.88rem; line-height:1.7; margin-bottom:.2rem}
+.modal-card .modal-close{position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:#8a847e; line-height:1}
+.modal-card .modal-close:hover{color:#2e2b29}
+

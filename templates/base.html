@@ -134,5 +134,23 @@
   })();
   </script>
   {% endif %}
+
+  <!-- macOS 安装帮助弹窗（在 body 层，避免容器 transform 限制 fixed 定位） -->
+  <div class="modal-mask" id="macosHelp" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="modal-card">
+      <button class="modal-close" onclick="document.getElementById('macosHelp').classList.remove('show')">✕</button>
+      <h3>macOS 安装说明</h3>
+      <p>由于程序员同志没钱给苹果支付开发者认证的一百大刀乐，直接运行可能会报错，按照以下方法处理即可：</p>
+      <ol>
+        <li>打开 DMG</li>
+        <li>将「心履」图标拖至应用程序文件夹</li>
+        <li>系统会弹出「Apple 无法检查 App 是否包含恶意软件」</li>
+        <li>打开系统设置</li>
+        <li>在边栏中找到「隐私与安全性」，选择</li>
+        <li>滚动至最底部，找到心履，点击「仍要打开」</li>
+      </ol>
+      <p>成功打开应用程序 🎉</p>
+    </div>
+  </div>
 </body>
 </html>
