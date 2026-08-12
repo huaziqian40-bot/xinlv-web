@@ -26,6 +26,18 @@
 .dl-old-versions li a{color:#8a847e}
 .dl-old-versions li a:hover{color:#5f7d75}
 .dl-other-note{text-align:center; color:#8a847e; font-size:.85rem; margin-top:2rem}
+.dl-hint{text-align:center; margin-top:.6rem}
+.dl-hint a{color:#8a847e; font-size:.82rem; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+.dl-hint a:hover{color:#5f7d75}
+.modal-mask{display:none; position:fixed; inset:0; z-index:9999; background:rgba(40,35,30,.45); backdrop-filter:blur(2px); justify-content:center; align-items:center; padding:1rem}
+.modal-mask.show{display:flex}
+.modal-card{background:#fff; border-radius:20px; max-width:480px; width:100%; padding:1.8rem 1.6rem; box-shadow:0 16px 48px rgba(40,35,30,.18); position:relative; max-height:90vh; overflow-y:auto}
+.modal-card h3{font-size:1.1rem; margin:0 0 .6rem; color:#2e2b29}
+.modal-card p{color:#6b6560; font-size:.88rem; line-height:1.6; margin:0 0 .8rem}
+.modal-card ol{padding-left:1.2rem; margin:0 0 .8rem}
+.modal-card ol li{color:#6b6560; font-size:.88rem; line-height:1.7; margin-bottom:.2rem}
+.modal-card .modal-close{position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:#8a847e; line-height:1}
+.modal-card .modal-close:hover{color:#2e2b29}
 .github-section{max-width:600px; margin:2.5rem auto 0}
 .github-card{background:#ffffff; border-radius:16px; padding:1.8rem 1.2rem; text-align:center; box-shadow:0 6px 24px rgba(60,50,40,.07)}
 .github-card-icon{font-size:2rem; margin-bottom:.4rem}
@@ -104,6 +116,7 @@
       <a href="{% static macos_versions.0.1 %}" class="dl-btn" download>
         {{ T.download_current }} {{ macos_versions.0.0 }}
       </a>
+      <div class="dl-hint"><a href="javascript:void(0)" onclick="document.getElementById('macosHelp').classList.add('show')">下载前请查看</a></div>
       {% if macos_versions|length > 1 %}
       <div class="dl-old-versions">
         <details>
@@ -131,6 +144,24 @@
   </div>
 
   <p class="dl-other-note">{{ T.download_other }}</p>
+
+  <!-- macOS 安装帮助弹窗 -->
+  <div class="modal-mask" id="macosHelp" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="modal-card">
+      <button class="modal-close" onclick="document.getElementById('macosHelp').classList.remove('show')">✕</button>
+      <h3>macOS 安装说明</h3>
+      <p>由于程序员同志没钱给苹果支付开发者认证的一百大刀乐，直接运行可能会报错，按照以下方法处理即可：</p>
+      <ol>
+        <li>打开 DMG</li>
+        <li>将「心履」图标拖至应用程序文件夹</li>
+        <li>系统会弹出「Apple 无法检查 App 是否包含恶意软件」</li>
+        <li>打开系统设置</li>
+        <li>在边栏中找到「隐私与安全性」，选择</li>
+        <li>滚动至最底部，找到心履，点击「仍要打开」</li>
+      </ol>
+      <p>成功打开应用程序 🎉</p>
+    </div>
+  </div>
 
   <!-- GitHub 项目源码卡片 -->
   <div class="github-section">
