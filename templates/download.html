@@ -96,12 +96,28 @@
     </div>
 
     <!-- macOS -->
-    <div class="download-card disabled">
+    <div class="download-card">
       <div class="dl-logo">
         <img src="{% static 'images/Apple-Logo.png' %}" alt="macOS" width="200" height="200">
       </div>
       <h3>{{ T.download_macos }}</h3>
-      <span class="dl-btn disabled">{{ T.download_developing }}</span>
+      <a href="{% static macos_versions.0.1 %}" class="dl-btn" download>
+        {{ T.download_current }} {{ macos_versions.0.0 }}
+      </a>
+      {% if macos_versions|length > 1 %}
+      <div class="dl-old-versions">
+        <details>
+          <summary>{{ T.download_old_versions }}</summary>
+          <ul>
+            {% for ver, path in macos_versions %}
+            {% if not forloop.first %}
+            <li><a href="{% static path %}">v{{ ver }}</a></li>
+            {% endif %}
+            {% endfor %}
+          </ul>
+        </details>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Linux -->
@@ -126,7 +142,7 @@
         <a href="https://github.com/huaziqian40-bot/xinlv-web" target="_blank" rel="noopener" class="github-btn">{{ T.github_web }}</a>
         <a href="https://github.com/huaziqian40-bot/xinlv-android" target="_blank" rel="noopener" class="github-btn">{{ T.github_android }}</a>
         <a href="https://github.com/huaziqian40-bot/xinlv-windows" target="_blank" rel="noopener" class="github-btn">{{ T.github_windows }}</a>
-        <span class="github-btn disabled">{{ T.github_macos }}</span>
+        <a href="https://github.com/huaziqian40-bot/xinliv-macos" target="_blank" rel="noopener" class="github-btn">{{ T.github_macos }}</a>
         <span class="github-btn disabled">{{ T.github_linux }}</span>
       </div>
     </div>
