@@ -118,6 +118,7 @@ moodsite/
 
 ## 6. 重要约束与踩坑记录
 
+- **【最高纪律】`D:\backup\` 只进不出：只可追加，不可删除、移动、重命名其中任何内容**（2026-08-14 用户钦定的最高优先级约定）：Windows 计划任务「心履每日备份」每天 05:00 调用 `D:\moodsite\backup_linux.py`，通过 SSH（192.168.5.35 / hzq / 000000）从 Linux 生产机拉取 `.env` + 一致性备份 `db.sqlite3`，存入 `D:\backup\YYMMDD\`（如 `D:\backup\260814\`）。**严格只存文字数据，音频/图片（media/）一律不备份**（SQLite backup API 在远端生成一致性快照，避免 waitress 运行中直接拷文件）。幂等：当天已备份则跳过；失败留痕 `D:\backup\backup.log`（追加，不覆盖）。改动脚本前先读它顶部 docstring；任何"清理 D:\backup 腾空间"的想法都违反最高纪律，直接否决。
 - **`DEBUG=False` 时忘记跑 `collectstatic` 会导致页面完全没样式**（真实故障）。`run_server.bat` 已自动兜底（启动前跑 `migrate` + `collectstatic`），别删这两行。
 - **`X_FRAME_OPTIONS` 必须是 `SAMEORIGIN` 不能是 `DENY`**：客户端用 iframe/webview 加载本站页面，DENY 会导致客户端白屏（真实踩过的坑）。
 - **`.env` 和 `db.sqlite3` 永远不进交付的 zip / 版本控制**，包含密钥和用户数据。
@@ -179,6 +180,7 @@ python migrate_data_to_linux.py                # 同步 .env / db.sqlite3 / medi
 
 # 数据库备份
 python backup_db.py                     # 一次性备份到 backups/，保留最近30份
+python backup_linux.py                  # 手动执行每日备份（计划任务 05:00 自动跑；产物 D:\backup\YYMMDD）
 
 # 没有配置 lint/format 工具（无 black/flake8/eslint 配置文件），
 # 保持现有代码风格手写即可，不要引入新的格式化工具链改动全量文件。
@@ -194,7 +196,7 @@ python backup_db.py                     # 一次性备份到 backups/，保留�
 
 ## 9. 当前工作状态
 
-**已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"、**客户端 REST API v1**（2026-07-26：令牌登录/离线同步/目录/推荐/树洞/个人数据，16 个测试用例）、**生产环境迁移 Linux**（2026-08-13：代码/数据/服务已迁至 192.168.5.35，systemd 托管，公网经 Linux tunnel 正常；Windows cloudflared 已卸载）。
+**已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"、**客户端 REST API v1**（2026-07-26：令牌登录/离线同步/目录/推荐/树洞/个人数据，16 个测试用例）、**生产环境迁移 Linux**（2026-08-13：代码/数据/服务已迁至 192.168.5.35，systemd 托管，公网经 Linux tunnel 正常；Windows cloudflared 已卸载）、**每日异地备份**（2026-08-14：Windows 计划任务 05:00 从 Linux 拉取 .env + db.sqlite3 到 `D:\backup\YYMMDD\`，最高纪律只进不出）。
 
 **客户端交付物**：`C:\Users\Administrator\Desktop\clients\` 目录存放客户端可执行文件，供直接下载安装。
 - `clients\安卓\心履-安卓-v1.0.2.apk` — 安卓 APK（release 签名包）
