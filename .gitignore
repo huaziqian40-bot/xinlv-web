@@ -13,3 +13,6 @@ media/user_music/*
 logs/
 *.log
 backups/
+
+# 客户端安装包为构建产物，不纳入 git（部署经 SFTP 同步）
+static/download/
