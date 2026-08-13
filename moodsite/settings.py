@@ -50,6 +50,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # 内部补斜杠：Cloudflare URL 规范化会删尾部斜杠，与 Django APPEND_SLASH 冲突导致 301 循环，
+    # 此中间件直接改写路径返回 200，必须放在 CommonMiddleware 之前
+    "moodsite.middleware.InternalAppendSlashMiddleware",
     # whitenoise：让服务器自己托管 CSS 等静态文件，DEBUG=False 时也不用额外配置
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
