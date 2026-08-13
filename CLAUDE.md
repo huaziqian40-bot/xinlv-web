@@ -146,6 +146,9 @@ moodsite/
 - **Linux venv 创建需要先装 `python3.12-venv`**（Ubuntu 24.04 默认缺 ensurepip）：`echo 000000 | sudo -S apt-get install -y python3.12-venv`，否则 `python3 -m venv` 直接报错。
 - **公网域名**：xin-lv.com 已解析到 Cloudflare（经 Linux tunnel 出网）；**www.xin-lv.com 上游 DNS 无记录（NXDOMAIN）**，需要用户在 Cloudflare DNS 面板添加，机器侧无法修复。`.env` 的 ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS 已含 www 子域。
 - **GitHub 单文件 >100MB 会被 pre-receive hook 拒绝**（>50MB 警告）：客户端安装包（DMG/APK/exe）是构建产物，不进 git（`.gitignore` 已加 `static/download/`），部署经 SFTP 同步。**客户端源码在 `D:\moodsite\clients\` 是独立 git 仓库**，与 web 仓库分开提交。
+- **Cloudflare URL 规范化会删尾部斜杠，与 Django APPEND_SLASH 冲突 → 无限 301 循环**（2026-08-14 实证，浏览器报 ERR_TOO_MANY_REDIRECTS）：边缘把 `/login/` 改写成 `/login` 转发给源站，Django 对无斜杠返回 301 指向 `/login/`，浏览器再请求又被删斜杠……循环。**修复**：`moodsite/middleware.py` 的 `InternalAppendSlashMiddleware` 在 CommonMiddleware 之前把"补斜杠能匹配路由"的无斜杠请求内部改写 `path_info`，直接返回 200 不再 301。**不要删这个中间件**，也不要去改 Cloudflare 面板（该中间件让行为对边缘规范化免疫）。验证方式：`curl -s -o /dev/null -w '%{http_code}' https://xin-lv.com/login/` 应得 200（带斜杠和无斜杠都 200）。
+- **Linux 生产库曾被误删/落错位置（2026-08-14 全站 500 事故，已恢复）**：两个根因要防复发——① `sync_web_linux.py` 的 `cleanup_remote` 曾把远程 `db.sqlite3` 当"该删的旧文件"删掉（find 不排除数据文件 + 循环里 `name == "db.sqlite3"` 直接 rm），已修：find 排除 `-not -name 'db.sqlite3' -not -name '.env'` 且循环内显式 `continue`；② 旧版 `migrate_data_to_linux.py` 的 `sync_media` 里 `run()` 漏传 `ssh` 参数（已修）。**事故判断方法**：Django 页面全 500 而日志报 `no such table: core_sitesettings` → 先 `ls -la /home/hzq/xinlv-web/db.sqlite3` 看是否 0 字节；若旁边有反斜杠文件名（`xinlv-web\db.sqlite3`，Windows 路径被当文件名创建）则是迁移路径 bug 落错位置，把该文件 cp 回正斜杠位置再 `migrate --noinput` 即可。**sync/migrate 脚本任何改动都必须先确认"绝不动远程数据文件"**。
+- **生产库数据规模参考**：Linux 生产库 5 用户 / 85 条心情（2026-08-14 恢复后确认），与 Windows 测试库备份 `backups/db_20260813_232157.sqlite3`（290816 字节）同源。
 
 ## 7. 常用命令
 
