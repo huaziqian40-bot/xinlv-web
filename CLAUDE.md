@@ -15,9 +15,9 @@
 "心履"（曾用名"心情树洞""念今心"）是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
 按情绪推荐音乐/建议/小知识/视频、与 AI 树洞（DeepSeek）文字+语音聊天（内置关键词危
 机硬拦截）、连胜徽章、用户主页、用户投稿+AI审核、后台管理、中英双语、放松小游戏。
-部署在开发者 Windows PC 上，经 Cloudflare Tunnel 对外提供 HTTPS 访问（本地到服务器仍为 HTTP）。
+部署在局域网 Linux 生产机 **192.168.5.35**（Ubuntu 24.04，路径 `/home/hzq/xinlv-web`，SSH 用户 hzq/密码 000000），systemd 服务 `xinlv.service` 用 waitress 监听 **127.0.0.1:8000**，经该机上的 Cloudflare Tunnel 对外提供 HTTPS 访问（本地到服务器仍为 HTTP）。Windows PC 只作开发机，不再运行生产服务（cloudflared 已卸载）。
 
-**磁盘布局（2026-07-25 定）**：D 盘根目录只有 `D:\moodsite`（本项目总文件夹）和 `D:\server`（用户其他服务，勿动）。本项目生产环境在 **`D:\moodsite\product`**（git 仓库根）；总文件夹下还有 `userinput0724`（历史版本源文件）、`moodsite_recovered`（恢复中间产物）、`tmp`、`moodsitelogsedge_profile` 和聊天记录导出文件。
+**磁盘布局**：D 盘根目录只有 `D:\moodsite`（本项目总文件夹）和 `D:\server`（用户其他服务，勿动）。Windows 端 git 仓库根在 **`D:\moodsite\web`**；总文件夹下还有 `userinput0724`（历史版本源文件）、`moodsite_recovered`（恢复中间产物）、`tmp`、`moodsitelogsedge_profile` 和聊天记录导出文件。
 
 ## 2. 技术栈
 
@@ -114,7 +114,7 @@ moodsite/
 - **模型变更流程**：改 `models.py` 后本地跑 `python manage.py makemigrations core && python manage.py migrate` 验证再交付，不手写迁移文件。
 - **AI 相关 prompt 改动要谨慎**：`deepseek.py` 的 `SYSTEM_PROMPT` 和 `feature_views.AI_REVIEW_PROMPT` 都是经过多轮调整的安全相关文案（禁止病理化诊断、禁止透露自伤方式细节等），修改前确认没有破坏这些安全约束的语义。
 - **测试**：`core/tests_api.py` 有 API 的 16 个 TestCase 用例（2026-07-26 起），其余网页端逻辑仍无自动化测试，验证方式是用 `django.test.Client` 手写一次性脚本跑一遍再交付。写外部 API 调用（deepseek 等）的测试必须 mock，不能依赖外网。
-- **Git 规范**：已用 Git 管理（master 分支为主线，历史快照在孤儿分支 `history` / `history-clients`，见第 6 节）。commit message 用中文写清改了哪个功能即可，不必套用 Conventional Commits。
+- **Git 规范**：已用 Git 管理（main 分支为主线，历史快照在孤儿分支 `history` / `history-clients`，见第 6 节）。commit message 用中文写清改了哪个功能即可，不必套用 Conventional Commits。
 
 ## 6. 重要约束与踩坑记录
 
@@ -142,6 +142,10 @@ moodsite/
 - **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
 - **模板里用 `{% static %}` 必须自己在文件顶部 `{% load static %}`**：`{% extends %}` 不会继承父模板的 load（2026-07-27 实证：game.html 加水果贴图引用后整页 500，DEBUG=False 时日志无堆栈，用 `get_template('game.html').render({})` 在 shell 里复现才看到 TemplateSyntaxError）。
 - **重启 waitress 必须确认旧进程全死透**：Windows 上多个 waitress 能同时 LISTEN 同一端口（SO_REUSEADDR），只杀一个 PID 会留下旧进程继续发旧模板，curl 验证看到的还是旧页面（2026-07-27 实证：两代 waitress 同挂 8000，新代码"没生效"其实是请求打到了旧进程）。重启后改完代码要 curl 页面内容里的新特征串确认，别只看 200。
+- **生产环境在 Linux（2026-08-13 迁移，用户定的硬约定）**：那台 Linux（192.168.5.35）**只作生产环境**，所有开发在 Windows 完成。三条铁律：① 每次改网页端代码，**同时更新 Linux 端和 Windows 端**（Linux = 生产部署，Windows = git 提交）；② **所有用户数据只存在 Linux 上**（db.sqlite3 / media/ / backups/），Windows 从此只保留现有测试数据并冻结，不再积累真实数据；③ **git 提交以 Windows 上的代码为准**。部署用 `sync_web_linux.py`（代码，排除数据/产物）+ `migrate_data_to_linux.py`（.env + db + media 数据）；服务由 systemd `xinlv.service` 托管，重启命令 `echo 000000 | sudo -S systemctl restart xinlv.service`（Linux sudo 需要密码，一律用 `echo 000000 | sudo -S <cmd>`）。
+- **Linux venv 创建需要先装 `python3.12-venv`**（Ubuntu 24.04 默认缺 ensurepip）：`echo 000000 | sudo -S apt-get install -y python3.12-venv`，否则 `python3 -m venv` 直接报错。
+- **公网域名**：xin-lv.com 已解析到 Cloudflare（经 Linux tunnel 出网）；**www.xin-lv.com 上游 DNS 无记录（NXDOMAIN）**，需要用户在 Cloudflare DNS 面板添加，机器侧无法修复。`.env` 的 ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS 已含 www 子域。
+- **GitHub 单文件 >100MB 会被 pre-receive hook 拒绝**（>50MB 警告）：客户端安装包（DMG/APK/exe）是构建产物，不进 git（`.gitignore` 已加 `static/download/`），部署经 SFTP 同步。**客户端源码在 `D:\moodsite\clients\` 是独立 git 仓库**，与 web 仓库分开提交。
 
 ## 7. 常用命令
 
@@ -158,8 +162,16 @@ python manage.py migrate                # 应用迁移
 python manage.py collectstatic --noinput  # DEBUG=False 前必须跑
 python manage.py createsuperuser        # 创建后台管理员（is_staff=True）
 
-# 生产运行（Windows）
-run_server.bat                          # 已内置自动 migrate+collectstatic
+# 生产运行（Windows 开发机已不再跑生产，以下为 Linux 生产机 192.168.5.35 的命令）
+ssh hzq@192.168.5.35                          # 密码 000000
+cd /home/hzq/xinlv-web
+venv/bin/python manage.py collectstatic --noinput   # 改完静态文件后
+echo 000000 | sudo -S systemctl restart xinlv.service   # 重启生产服务（改代码后必做）
+journalctl -u xinlv.service -n 50 --no-pager   # 看服务日志
+
+# Windows 开发机一键双端同步（在 D:\moodsite 下跑）
+python sync_web_linux.py                       # 同步网页端代码到 Linux 生产机
+python migrate_data_to_linux.py                # 同步 .env / db.sqlite3 / media/ 数据到 Linux
 
 # 数据库备份
 python backup_db.py                     # 一次性备份到 backups/，保留最近30份
@@ -172,13 +184,13 @@ python backup_db.py                     # 一次性备份到 backups/，保留�
 
 - **DeepSeek API**：`.env` 中 `DEEPSEEK_API_KEY`（树洞+投稿AI审核必需）、`DEEPSEEK_BASE_URL`（默认 `https://api.deepseek.com`）、`DEEPSEEK_MODEL`（默认 `deepseek-v4-flash`）。**未配置 key 时优雅降级**而非崩溃：树洞返回提示文案，投稿审核自动转人工。改动 `deepseek.py`/`ai_review()` 时不要破坏这个降级行为。
 - **edge-tts**：无需 key，但需能访问微软服务器（外网）。合成失败时前端自动回退浏览器自带朗读（`confidant.html` 内 `browserSpeak`）。
-- **内网穿透**：域名/端口写在 `.env` 的 `DJANGO_ALLOWED_HOSTS` 和 `CSRF_TRUSTED_ORIGINS`，穿透工具（frp等）不在本项目代码范围内。
+- **内网穿透**：域名/端口写在 `.env` 的 `DJANGO_ALLOWED_HOSTS` 和 `CSRF_TRUSTED_ORIGINS`；公网由 **Linux 生产机上的 Cloudflare Tunnel**（cloudflared）提供，Windows 上的 cloudflared 已卸载，站点只需监听 127.0.0.1:8000。穿透工具配置不在本项目代码范围内。
 - **无数据库服务/缓存/消息队列依赖**：SQLite 文件数据库，无 Redis/Celery。
 - **本地/生产差异**：仅由 `.env` 的 `DJANGO_DEBUG` 一个开关控制，无 settings_dev/settings_prod 分文件方案。
 
 ## 9. 当前工作状态
 
-**已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"、**客户端 REST API v1**（2026-07-26：令牌登录/离线同步/目录/推荐/树洞/个人数据，16 个测试用例）。
+**已完成**：情绪日历（月/周/年三视图）、一天多条记录、AI树洞（文字+语音+危机拦截）、免责声明（后台可编辑）、连胜徽章、用户主页+头像、用户投稿+AI审核+人工复审、中/英双语、后台管理、安全加固（限流/上传校验/安全响应头/日志/登录防爆破）、数据库备份脚本、Windows/安卓客户端壳、放松小游戏"情绪小西瓜"、**客户端 REST API v1**（2026-07-26：令牌登录/离线同步/目录/推荐/树洞/个人数据，16 个测试用例）、**生产环境迁移 Linux**（2026-08-13：代码/数据/服务已迁至 192.168.5.35，systemd 托管，公网经 Linux tunnel 正常；Windows cloudflared 已卸载）。
 
 **客户端交付物**：`C:\Users\Administrator\Desktop\clients\` 目录存放客户端可执行文件，供直接下载安装。
 - `clients\安卓\心履-安卓-v1.0.2.apk` — 安卓 APK（release 签名包）
@@ -188,7 +200,7 @@ python backup_db.py                     # 一次性备份到 backups/，保留�
 
 **进行中（客户端计划，2026-07-26 定）**：做**原生本地客户端**（非 webview 壳），离线可用、联网与服务器同步，界面与网页端不同。技术选型：安卓端 Java 原生 + Room 本地库；桌面端 JavaFX 共享代码，jpackage 打 Windows exe / Mac dmg（Mac 也接受 HMCL 式 jar + 用户自装 Java）。MVP 范围：登录/记心情/日历/推荐/AI聊天（仅联网）/徽章；不做游戏、投稿、后台、i18n。注意站点是 http 无 HTTPS，安卓需 `usesCleartextTraffic="true"`。顺序：安卓 → 桌面。
 
-**待办**：HTTPS 未配置（`ENABLE_HTTPS`/`SECURE_COOKIES` 开关已预留）；树洞页部分 JS 动态文案（语音状态提示、危机弹窗）未接入 i18n，英文模式下仍显示中文；nssm 自启只有手册未验证已配置；SQLite 若用户量明显增长需评估迁移 PostgreSQL。
+**待办**：`www.xin-lv.com` 上游 DNS 记录缺失（NXDOMAIN，需用户在 Cloudflare DNS 面板添加；`.env` 已配置好）；树洞页部分 JS 动态文案（语音状态提示、危机弹窗）未接入 i18n，英文模式下仍显示中文；SQLite 若用户量明显增长需评估迁移 PostgreSQL。HTTPS 已由 Cloudflare Tunnel 对外提供（源站仍 127.0.0.1:8000 HTTP，`ENABLE_HTTPS`/`SECURE_COOKIES` 开关按需用）。
 
 ## 10. 关键文件索引
 
