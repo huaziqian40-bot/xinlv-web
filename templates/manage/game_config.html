@@ -1,0 +1,33 @@
+{% extends "manage/base.html" %}
+{% block n_game_config %}active{% endblock %}
+{% block content %}
+<h1 class="m-h1">🍉 小游戏参数</h1>
+<p class="muted">调整后，网站游戏和在线客户端会在下一次读取配置时使用新参数；离线时仍使用内置默认值。</p>
+<form method="post" action="/manage/game-config/">
+  {% csrf_token %}
+  <div class="m-card">
+    <h2>物理参数</h2>
+    <p class="muted">请在允许范围内填写数字。范围越窄，游戏手感越稳定。</p>
+    <label class="m-field">重力（下落加速度）
+      <input type="text" name="gravity" value="{{ values.gravity }}" inputmode="decimal">
+      <small>默认 {{ defaults.gravity }}，范围 {{ ranges.gravity.0 }} ～ {{ ranges.gravity.1 }}；数值越大，下落越快。</small>
+    </label>
+    <label class="m-field">空气阻尼
+      <input type="text" name="damping" value="{{ values.damping }}" inputmode="decimal">
+      <small>默认 {{ defaults.damping }}，范围 {{ ranges.damping.0 }} ～ {{ ranges.damping.1 }}；越接近 1，运动衰减越慢。</small>
+    </label>
+    <label class="m-field">墙壁和地板反弹
+      <input type="text" name="wall_bounce" value="{{ values.wall_bounce }}" inputmode="decimal">
+      <small>默认 {{ defaults.wall_bounce }}，范围 {{ ranges.wall_bounce.0 }} ～ {{ ranges.wall_bounce.1 }}；数值越大，反弹越明显。</small>
+    </label>
+    <label class="m-field">合成弹力增强
+      <input type="text" name="merge_boost" value="{{ values.merge_boost }}" inputmode="decimal">
+      <small>默认 {{ defaults.merge_boost }}，范围 {{ ranges.merge_boost.0 }} ～ {{ ranges.merge_boost.1 }}；影响合成后新水果的速度。</small>
+    </label>
+  </div>
+  <div class="m-card">
+    <p class="muted">最近更新时间：{{ config.updated_at|date:"Y-m-d H:i:s" }}</p>
+    <button class="primary big" type="submit">保存小游戏参数</button>
+  </div>
+</form>
+{% endblock %}

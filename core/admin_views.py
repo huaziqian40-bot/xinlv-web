@@ -6,7 +6,8 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Song, Activity, PsychologyTip, MoodEntry, ChatMessage, SiteSettings, BilibiliVideo, UserContribution, MOODS
+from .models import (Song, Activity, PsychologyTip, MoodEntry, ChatMessage, SiteSettings,
+                     BilibiliVideo, UserContribution, MOODS, GameConfig)
 from . import limits
 
 User = get_user_model()
@@ -155,6 +156,67 @@ def site(request):
         messages.success(request, "已保存。访客刷新页面即可看到。")
         return redirect("manage_site")
     return render(request, "manage/site.html", {"s": s})
+
+
+@staff_required
+def game_config(request):
+    """编辑小游戏物理参数，保存后客户端下次轮询即可生效。"""
+    config = GameConfig.load()
+    defaults = {"gravity": 0.45, "damping": 0.994,
+                "wall_bounce": 0.35, "merge_boost": 1.06}
+    ranges = {
+        "gravity": (0.05, 1.5),
+        "damping": (0.90, 1.0),
+        "wall_bounce": (0.0, 1.0),
+        "merge_boost": (0.5, 2.0),
+    }
+    labels = {
+        "gravity": "重力（下落加速度）",
+        "damping": "空气阻尼",
+        "wall_bounce": "墙壁和地板反弹",
+        "merge_boost": "合成弹力增强",
+    }
+    values = {
+        "gravity": request.POST.get("gravity", config.gravity),
+        "damping": request.POST.get("damping", config.damping),
+        "wall_bounce": request.POST.get("wall_bounce", config.wall_bounce),
+        "merge_boost": request.POST.get("merge_boost", config.merge_boost),
+    }
+    if request.method == "POST":
+        parsed = {}
+        errors = []
+        for key, raw in values.items():
+            if not isinstance(raw, str) or not raw.strip():
+                errors.append(f"{labels[key]}不能为空。")
+                continue
+            try:
+                value = float(raw.strip())
+            except (TypeError, ValueError):
+                errors.append(f"{labels[key]}必须是数字。")
+                continue
+            import math
+            if not math.isfinite(value):
+                errors.append(f"{labels[key]}必须是有限数字。")
+                continue
+            low, high = ranges[key]
+            if not low <= value <= high:
+                errors.append(f"{labels[key]}必须在 {low:g} 到 {high:g} 之间。")
+                continue
+            parsed[key] = value
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            config.gravity = parsed["gravity"]
+            config.damping = parsed["damping"]
+            config.wall_bounce = parsed["wall_bounce"]
+            config.merge_boost = parsed["merge_boost"]
+            config.save()
+            messages.success(request, "小游戏参数已保存，网页和客户端会在下次刷新配置时生效。")
+            return redirect("manage_game_config")
+    return render(request, "manage/game_config.html", {
+        "config": config, "values": values, "defaults": defaults, "ranges": ranges,
+    })
 
 
 @staff_required

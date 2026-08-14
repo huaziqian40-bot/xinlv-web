@@ -7,10 +7,10 @@ import uuid as _uuid
 from unittest import mock
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.utils import timezone
 
-from .models import MoodEntry, ChatMessage, ApiToken
+from .models import MoodEntry, ChatMessage, ApiToken, GameConfig
 from . import ratelimit
 
 User = get_user_model()
@@ -226,3 +226,79 @@ class ApiTest(TestCase):
         self.assertEqual(r["username"], "apiuser")
         self.assertEqual(r["total_entries"], 1)
         self.assertIn("streak", r)
+
+    # ---- 在线小游戏参数 ----
+    def test_game_config_public_defaults_and_whitelist(self):
+        r = self.client.get("/api/game-config/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(set(r.json()), {
+            "gravity", "damping", "wall_bounce", "merge_boost", "updated_at"})
+        self.assertEqual(r.json()["gravity"], 0.45)
+        self.assertEqual(r.json()["damping"], 0.994)
+        self.assertEqual(GameConfig.objects.count(), 1)
+
+    def test_game_config_admin_permissions_and_save(self):
+        r = self.client.get("/manage/game-config/")
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login/", r["Location"])
+
+        self.user.is_staff = False
+        self.user.save(update_fields=["is_staff"])
+        self.client.force_login(self.user)
+        r = self.client.get("/manage/game-config/")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r["Location"], "/")
+
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        r = self.client.post("/manage/game-config/", {
+            "gravity": "0.5", "damping": "0.99",
+            "wall_bounce": "0.4", "merge_boost": "1.2"})
+        self.assertEqual(r.status_code, 302)
+        config = GameConfig.objects.get(pk=1)
+        self.assertEqual((config.gravity, config.damping,
+                          config.wall_bounce, config.merge_boost),
+                         (0.5, 0.99, 0.4, 1.2))
+        body = self.client.get("/api/game-config/").json()
+        self.assertEqual(body["merge_boost"], 1.2)
+
+    def test_game_config_rejects_invalid_values(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        self.client.force_login(self.user)
+        before = GameConfig.load()
+        original = (before.gravity, before.damping,
+                    before.wall_bounce, before.merge_boost)
+        for value in ("", "abc", "NaN", "Infinity", "-Infinity"):
+            r = self.client.post("/manage/game-config/", {
+                "gravity": value, "damping": "0.99",
+                "wall_bounce": "0.4", "merge_boost": "1.2"})
+            self.assertEqual(r.status_code, 200)
+            current = GameConfig.objects.get(pk=1)
+            self.assertEqual((current.gravity, current.damping,
+                              current.wall_bounce, current.merge_boost), original)
+        r = self.client.post("/manage/game-config/", {
+            "gravity": "9", "damping": "0.99",
+            "wall_bounce": "0.4", "merge_boost": "1.2"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(GameConfig.objects.get(pk=1).gravity, original[0])
+
+    def test_game_config_csrf_protection(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.user)
+
+        response = client.post("/manage/game-config/", {
+            "gravity": "0.5", "damping": "0.99",
+            "wall_bounce": "0.4", "merge_boost": "1.2"})
+        self.assertEqual(response.status_code, 403)
+
+        page = client.get("/manage/game-config/")
+        token = page.cookies["csrftoken"].value
+        response = client.post("/manage/game-config/", {
+            "gravity": "0.5", "damping": "0.99",
+            "wall_bounce": "0.4", "merge_boost": "1.2",
+            "csrfmiddlewaretoken": token}, HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(GameConfig.objects.get(pk=1).gravity, 0.5)

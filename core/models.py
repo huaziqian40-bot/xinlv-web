@@ -171,6 +171,26 @@ class SiteSettings(models.Model):
         return obj
 
 
+class GameConfig(models.Model):
+    """情绪小西瓜的在线物理参数，pk 固定为 1。"""
+    gravity = models.FloatField(default=0.45)
+    damping = models.FloatField(default=0.994)
+    wall_bounce = models.FloatField(default=0.35)
+    merge_boost = models.FloatField(default=1.06)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "小游戏参数"
+
+    def __str__(self):
+        return "小游戏参数"
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class BilibiliVideo(models.Model):
     """记录心情后推荐的 B 站视频。可按心情打标签，留空则对所有心情可推。"""
     title = models.CharField(max_length=200)

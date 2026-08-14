@@ -328,13 +328,13 @@ def download(request):
         ("1.2.10", "download/android/xinlv-1.2.10.apk"),
     ]
     windows_versions = [
-        ("1.1.1", "download/windows/xinlv-1.1.1.exe"),
+        ("1.1.2", "download/windows/xinlv-1.1.2.exe"),
         ("1.0.4", "download/windows/xinlv-1.0.4.exe"),
         ("1.0.3", "download/windows/xinlv-1.0.3.exe"),
         ("1.0.2", "download/windows/xinlv-1.0.2.exe"),
     ]
     macos_versions = [
-        ("1.1.1", "download/macos/心履-1.1.1.dmg"),
+        ("1.1.2", "download/macos/心履-1.1.2.dmg"),
         ("1.0.9", "download/macos/心履-1.0.9.dmg"),
         ("1.0.7", "download/macos/心履-1.0.7.dmg"),
     ]

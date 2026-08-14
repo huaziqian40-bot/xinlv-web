@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/v1/chat/history/", api.chat_history, name="api_chat_history"),
     path("api/v1/chat/clear/", api.chat_clear, name="api_chat_clear"),
     path("api/v1/profile/", api.profile, name="api_profile"),
+    path("api/game-config/", api.game_config, name="game_config"),
 
     path("", views.home, name="home"),
     path("save/", views.save_mood, name="save_mood"),
@@ -59,6 +60,7 @@ urlpatterns = [
     path("manage/activities/", admin_views.activities, name="manage_activities"),
     path("manage/videos/", admin_views.videos, name="manage_videos"),
     path("manage/site/", admin_views.site, name="manage_site"),
+    path("manage/game-config/", admin_views.game_config, name="manage_game_config"),
     path("manage/users/", admin_views.users, name="manage_users"),
     path("manage/users/<int:user_id>/moods/", admin_views.user_moods, name="manage_user_moods"),
     path("manage/users/<int:user_id>/chats/", admin_views.user_chats, name="manage_user_chats"),

@@ -54,10 +54,24 @@
     {r:112,color:'#6fae5c', emoji:'🍉', name:'大西瓜', score:66},
   ];
   const LOSE_LINE = 70;      // 顶部警戒线：水果静止后越过此线即判负
-  const GRAVITY = 0.45;      // 下落加速度（用户反馈太慢，适度加快）
-  const DAMPING = 0.994;
-  const WALL_BOUNCE = 0.35;
-  const MERGE_BOOST = 1.06;  // 合成一瞬间轻微弹出手感
+  const DEFAULT_GAME_CONFIG = {gravity: 0.45, damping: 0.994, wallBounce: 0.35, mergeBoost: 1.06};
+  let gameConfig = {...DEFAULT_GAME_CONFIG};
+
+  // 在线参数只接受服务端约定的有限范围，异常字段保留本地默认值。
+  function applyGameConfig(raw){
+    raw = raw && typeof raw === 'object' ? raw : {};
+    const numberInRange = (value, low, high, fallback) => {
+      const n = Number(value);
+      return Number.isFinite(n) && n >= low && n <= high ? n : fallback;
+    };
+    gameConfig = {
+      gravity: numberInRange(raw.gravity, 0.05, 1.5, DEFAULT_GAME_CONFIG.gravity),
+      damping: numberInRange(raw.damping, 0.90, 1.0, DEFAULT_GAME_CONFIG.damping),
+      wallBounce: numberInRange(raw.wall_bounce, 0.0, 1.0, DEFAULT_GAME_CONFIG.wallBounce),
+      mergeBoost: numberInRange(raw.merge_boost, 0.5, 2.0, DEFAULT_GAME_CONFIG.mergeBoost)
+    };
+  }
+  window.applyGameConfig = applyGameConfig;
   const SPIN_FRICTION = 0.25;   // 碰撞摩擦→旋转的传递系数（手感调参）
   const ANG_DAMPING = 0.985;    // 角速度空气衰减
   const MAX_SPIN = 0.3;         // 角速度上限（弧度/帧），防止合成连撞转出残影
@@ -178,9 +192,9 @@
   // ---- 物理更新：重力 + 圆形碰撞 + 旋转（摩擦/滚动）+ 合成 ----
   function update(){
     for(const b of balls){
-      b.vy += GRAVITY;
+      b.vy += gameConfig.gravity;
       b.x += b.vx; b.y += b.vy;
-      b.vx *= DAMPING; b.vy *= DAMPING;
+      b.vx *= gameConfig.damping; b.vy *= gameConfig.damping;
       // 角速度积分 + 衰减
       b.angVel *= ANG_DAMPING;
       // 接近静止的水果不该自转：低速时强阻尼转速（旋转只跟随运动存在）
@@ -191,10 +205,10 @@
       if(b.scale < 1) b.scale = Math.min(1, b.scale + 0.08);
 
       // 墙壁与地板
-      if(b.x - b.r < 0){ b.x = b.r; b.vx *= -WALL_BOUNCE; b.angVel += b.vy / b.r * 0.2; }  // 蹭墙下滚带转
-      if(b.x + b.r > W){ b.x = W - b.r; b.vx *= -WALL_BOUNCE; b.angVel -= b.vy / b.r * 0.2; }
+      if(b.x - b.r < 0){ b.x = b.r; b.vx *= -gameConfig.wallBounce; b.angVel += b.vy / b.r * 0.2; }
+      if(b.x + b.r > W){ b.x = W - b.r; b.vx *= -gameConfig.wallBounce; b.angVel -= b.vy / b.r * 0.2; }
       if(b.y + b.r > H){
-        b.y = H - b.r; b.vy *= -WALL_BOUNCE; if(Math.abs(b.vy)<0.6) b.vy=0;
+        b.y = H - b.r; b.vy *= -gameConfig.wallBounce; if(Math.abs(b.vy)<0.6) b.vy=0;
         // 落地滚动：角速度向「纯滚动」ω=vx/r 靠拢（滑动摩擦的效果），贴地久了自然停转
         const rolling = b.vx / b.r;
         b.angVel += (rolling - b.angVel) * 0.15;
@@ -243,7 +257,7 @@
       for(const [a,b] of toMerge){
         const level = a.level+1;
         const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-        spawnBall(mx, my, level);
+        spawnBall(mx, my, level, (a.vx + b.vx) / 2, (a.vy + b.vy) / 2 - gameConfig.mergeBoost);
         const nb = balls[balls.length-1];
         nb.scale = 0.7; // 合成弹出动画起点
         // 继承母水果的平均朝向与转速，合成瞬间不会"啪"地回正
@@ -355,6 +369,15 @@
     `<span class="fc-item" title="${f.name}"><img src="${SPRITE_BASE}f${i}.png" alt="${f.name}" ` +
     `style="width:22px;height:22px;vertical-align:middle" onerror="this.outerHTML='${f.emoji}'"></span>`
   ).join('<span class="fc-arrow">→</span>');
+
+  function pollGameConfig(){
+    fetch('/api/game-config/', {cache: 'no-store'})
+      .then(response => response.ok ? response.json() : null)
+      .then(config => { if(config) applyGameConfig(config); })
+      .catch(() => {}); // 离线时保持本地默认值/上次有效值
+  }
+  pollGameConfig();
+  window.setInterval(pollGameConfig, 60000);
 
   resetGame();
   loop();

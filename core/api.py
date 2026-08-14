@@ -23,7 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .models import (MoodEntry, ChatMessage, Song, Activity, PsychologyTip,
-                     BilibiliVideo, SiteSettings, ApiToken, MOODS, MOOD_KEYS, MOOD_MAP,
+                     BilibiliVideo, SiteSettings, GameConfig, ApiToken, MOODS, MOOD_KEYS, MOOD_MAP,
                      compute_streak_and_badges)
 from . import recommendations, deepseek, crisis, ratelimit
 
@@ -100,6 +100,19 @@ def ping(request):
     return JsonResponse({
         "ok": True, "version": API_VERSION,
         "server_time": timezone.now().isoformat(),
+    })
+
+
+# ---------- 在线小游戏参数（免认证，网页和游客客户端可用）----------
+def game_config(request):
+    """返回公开的小游戏物理参数，不暴露其他站点设置。"""
+    config = GameConfig.load()
+    return JsonResponse({
+        "gravity": config.gravity,
+        "damping": config.damping,
+        "wall_bounce": config.wall_bounce,
+        "merge_boost": config.merge_boost,
+        "updated_at": _iso(config.updated_at),
     })
 
 
