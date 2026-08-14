@@ -143,7 +143,7 @@ moodsite/
 - **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
 - **模板里用 `{% static %}` 必须自己在文件顶部 `{% load static %}`**：`{% extends %}` 不会继承父模板的 load（2026-07-27 实证：game.html 加水果贴图引用后整页 500，DEBUG=False 时日志无堆栈，用 `get_template('game.html').render({})` 在 shell 里复现才看到 TemplateSyntaxError）。
 - **重启 waitress 必须确认旧进程全死透**：Windows 上多个 waitress 能同时 LISTEN 同一端口（SO_REUSEADDR），只杀一个 PID 会留下旧进程继续发旧模板，curl 验证看到的还是旧页面（2026-07-27 实证：两代 waitress 同挂 8000，新代码"没生效"其实是请求打到了旧进程）。重启后改完代码要 curl 页面内容里的新特征串确认，别只看 200。
-- **macOS 构建固定在指定 Mac 上执行**（2026-08-14 用户明确约定）：每次构建 macOS DMG，必须连接局域网 macOS 构建机 **192.168.5.3**，使用 SSH 用户 `huazixian`、密码 `000000`，在该电脑上运行 `build.sh`；不要在 Windows 本机尝试构建，也不要反复询问构建位置或凭据。构建完成后将 DMG 传回 Windows 交付目录和网站下载目录。
+- **macOS 构建固定在指定 Mac 上执行**（2026-08-14 用户明确约定）：每次构建 macOS DMG，必须连接局域网 macOS 构建机 **192.168.5.3**，使用 SSH 用户 `huazixian`、密码 `000000`，在该电脑上运行 `build.sh`；不要在 Windows 本机尝试构建，也不要反复询问构建位置或凭据。每次构建完成后，必须在该 Mac 的桌面保留一份最新 DMG，同时将 DMG 传回 Windows 交付目录和网站下载目录。
 - **Linux venv 创建需要先装 `python3.12-venv`**（Ubuntu 24.04 默认缺 ensurepip）：`echo 000000 | sudo -S apt-get install -y python3.12-venv`，否则 `python3 -m venv` 直接报错。
 - **公网域名**：xin-lv.com 已解析到 Cloudflare（经 Linux tunnel 出网）；**www.xin-lv.com 上游 DNS 无记录（NXDOMAIN）**，需要用户在 Cloudflare DNS 面板添加，机器侧无法修复。`.env` 的 ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS 已含 www 子域。
 - **GitHub 单文件 >100MB 会被 pre-receive hook 拒绝**（>50MB 警告）：客户端安装包（DMG/APK/exe）是构建产物，不进 git（`.gitignore` 已加 `static/download/`），部署经 SFTP 同步。**客户端源码在 `D:\moodsite\clients\` 是独立 git 仓库**，与 web 仓库分开提交。
