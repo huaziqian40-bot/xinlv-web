@@ -15,7 +15,7 @@
 "心履"（曾用名"心情树洞""念今心"）是 Django 全栈的青少年心理陪伴 Web 应用：记录每日情绪（一天可多条）、
 按情绪推荐音乐/建议/小知识/视频、与 AI 树洞（DeepSeek）文字+语音聊天（内置关键词危
 机硬拦截）、连胜徽章、用户主页、用户投稿+AI审核、后台管理、中英双语、放松小游戏。
-部署在局域网 Linux 生产机 **192.168.5.35**（Ubuntu 24.04，路径 `/home/hzq/xinlv-web`，SSH 用户 hzq/密码 000000），systemd 服务 `xinlv.service` 用 waitress 监听 **127.0.0.1:8000**，经该机上的 Cloudflare Tunnel 对外提供 HTTPS 访问（本地到服务器仍为 HTTP）。Windows PC 只作开发机，不再运行生产服务（cloudflared 已卸载）。
+部署在局域网 Linux 生产机 **192.168.5.35**（Ubuntu 24.04，路径 `/home/hzq/xinlv-web`，SSH 用户 `hzq`，密码 `000000`），systemd 服务 `xinlv.service` 用 waitress 监听 **127.0.0.1:8000**，经该机上的 Cloudflare Tunnel 对外提供 HTTPS 访问（本地到服务器仍为 HTTP）。macOS 客户端构建机为局域网电脑 **192.168.5.3**（SSH 用户 `huazixian`，密码 `000000`）。Windows PC 只作开发机，不再运行生产服务（cloudflared 已卸载）。
 
 **磁盘布局**：D 盘根目录只有 `D:\moodsite`（本项目总文件夹）和 `D:\server`（用户其他服务，勿动）。Windows 端 git 仓库根在 **`D:\moodsite\web`**；总文件夹下还有 `userinput0724`（历史版本源文件）、`moodsite_recovered`（恢复中间产物）、`tmp`、`moodsitelogsedge_profile` 和聊天记录导出文件。
 
@@ -143,7 +143,7 @@ moodsite/
 - **限流计数是进程内存全局的，写测试时每个用例前要 `ratelimit._hits.clear()`**，否则多个用例共享同一 IP/用户的计数会意外触发 429。
 - **模板里用 `{% static %}` 必须自己在文件顶部 `{% load static %}`**：`{% extends %}` 不会继承父模板的 load（2026-07-27 实证：game.html 加水果贴图引用后整页 500，DEBUG=False 时日志无堆栈，用 `get_template('game.html').render({})` 在 shell 里复现才看到 TemplateSyntaxError）。
 - **重启 waitress 必须确认旧进程全死透**：Windows 上多个 waitress 能同时 LISTEN 同一端口（SO_REUSEADDR），只杀一个 PID 会留下旧进程继续发旧模板，curl 验证看到的还是旧页面（2026-07-27 实证：两代 waitress 同挂 8000，新代码"没生效"其实是请求打到了旧进程）。重启后改完代码要 curl 页面内容里的新特征串确认，别只看 200。
-- **生产环境在 Linux（2026-08-13 迁移，用户定的硬约定）**：那台 Linux（192.168.5.35）**只作生产环境**，所有开发在 Windows 完成。三条铁律：① 每次改网页端代码，**同时更新 Linux 端和 Windows 端**（Linux = 生产部署，Windows = git 提交）；② **所有用户数据只存在 Linux 上**（db.sqlite3 / media/ / backups/），Windows 从此只保留现有测试数据并冻结，不再积累真实数据；③ **git 提交以 Windows 上的代码为准**。部署用 `sync_web_linux.py`（代码，排除数据/产物）+ `migrate_data_to_linux.py`（.env + db + media 数据）；服务由 systemd `xinlv.service` 托管，重启命令 `echo 000000 | sudo -S systemctl restart xinlv.service`（Linux sudo 需要密码，一律用 `echo 000000 | sudo -S <cmd>`）。
+- **macOS 构建固定在指定 Mac 上执行**（2026-08-14 用户明确约定）：每次构建 macOS DMG，必须连接局域网 macOS 构建机 **192.168.5.3**，使用 SSH 用户 `huazixian`、密码 `000000`，在该电脑上运行 `build.sh`；不要在 Windows 本机尝试构建，也不要反复询问构建位置或凭据。构建完成后将 DMG 传回 Windows 交付目录和网站下载目录。
 - **Linux venv 创建需要先装 `python3.12-venv`**（Ubuntu 24.04 默认缺 ensurepip）：`echo 000000 | sudo -S apt-get install -y python3.12-venv`，否则 `python3 -m venv` 直接报错。
 - **公网域名**：xin-lv.com 已解析到 Cloudflare（经 Linux tunnel 出网）；**www.xin-lv.com 上游 DNS 无记录（NXDOMAIN）**，需要用户在 Cloudflare DNS 面板添加，机器侧无法修复。`.env` 的 ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS 已含 www 子域。
 - **GitHub 单文件 >100MB 会被 pre-receive hook 拒绝**（>50MB 警告）：客户端安装包（DMG/APK/exe）是构建产物，不进 git（`.gitignore` 已加 `static/download/`），部署经 SFTP 同步。**客户端源码在 `D:\moodsite\clients\` 是独立 git 仓库**，与 web 仓库分开提交。
@@ -173,6 +173,11 @@ cd /home/hzq/xinlv-web
 venv/bin/python manage.py collectstatic --noinput   # 改完静态文件后
 echo 000000 | sudo -S systemctl restart xinlv.service   # 重启生产服务（改代码后必做）
 journalctl -u xinlv.service -n 50 --no-pager   # 看服务日志
+
+# macOS DMG 构建（固定在局域网 Mac 192.168.5.3 上执行，不要改在 Windows 本机构建）
+ssh huazixian@192.168.5.3                       # 密码 000000
+cd /path/to/macos
+./build.sh
 
 # Windows 开发机一键双端同步（在 D:\moodsite 下跑）
 python sync_web_linux.py                       # 同步网页端代码到 Linux 生产机
