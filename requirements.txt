@@ -1,4 +1,4 @@
-Django>=5.1,<5.2
+Django>=5.1,<6
 requests>=2.31
 python-dotenv>=1.0
 waitress>=3.0
