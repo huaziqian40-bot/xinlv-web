@@ -241,6 +241,6 @@ def badges_page(request):
     my_streak = 0
     if request.user.is_authenticated:
         my_streak, _ = compute_streak_and_badges(request.user)
-    badge_list = [{"days": t, "emoji": e, "name": n,
-                   "remain": max(0, t - my_streak)} for (t, e, n) in BADGES]
+    badge_list = [{"days": t, "emoji": e, "name": n, "image": img,
+                   "remain": max(0, t - my_streak)} for (t, e, n, img, _d) in BADGES]
     return render(request, "badges.html", {"badge_list": badge_list, "my_streak": my_streak})

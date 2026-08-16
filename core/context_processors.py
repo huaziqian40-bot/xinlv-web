@@ -17,6 +17,7 @@ def site_globals(request):
             "key": latest.mood,
             "label": info.get("label", latest.mood),
             "emoji": info.get("emoji", ""),
+            "image": info.get("image", ""),
             "color": info.get("color", "#ccc"),
             "valence": info.get("valence", 0),
             "intensity_level": latest.intensity_level,

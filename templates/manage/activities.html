@@ -12,8 +12,8 @@
     <textarea name="text" rows="2" placeholder="建议内容，例如「出门散步 15 分钟，专注感受呼吸」" required></textarea>
     <p class="field-label">适合哪些心情？（不选 = 所有心情通用）</p>
     <div class="mood-checks">
-      {% for k,label,emoji,color,val in moods %}
-      <label class="mc"><input type="checkbox" name="moods" value="{{ k }}"> {{ emoji }} {{ label }}</label>
+      {% for k,label,emoji,color,val,image in moods %}
+      <label class="mc"><input type="checkbox" name="moods" value="{{ k }}"> <img class="mood-img mood-img-sm" src="{% static image %}" alt=""> {{ label }}</label>
       {% endfor %}
     </div>
     <button class="primary" type="submit">添加</button>

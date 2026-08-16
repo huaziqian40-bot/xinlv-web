@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block nav_contrib %}active{% endblock %}
 {% block title %}我要分享{% endblock %}
 {% block content %}
@@ -52,8 +53,8 @@
     <div class="cf-field" id="cf-moods">
       <label>适用心情</label>
       <div class="mood-checks">
-        {% for key,label,emoji,color,val in moods %}
-        <label class="mc"><input type="checkbox" name="moods" value="{{ key }}"> {{ emoji }} {{ label }}</label>
+        {% for key,label,emoji,color,val,image in moods %}
+        <label class="mc"><input type="checkbox" name="moods" value="{{ key }}"> <img class="mood-img mood-img-sm" src="{% static image %}" alt=""> {{ label }}</label>
         {% endfor %}
       </div>
     </div>

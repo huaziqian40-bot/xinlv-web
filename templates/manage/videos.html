@@ -13,8 +13,8 @@
     <label class="m-field">B站链接<input type="text" name="url" placeholder="https://www.bilibili.com/video/BV..." required></label>
     <div class="m-field">适用心情（不选=所有心情都可能推）
       <div class="mood-checks">
-        {% for key,label,emoji,color,val in moods %}
-        <label class="mc"><input type="checkbox" name="moods" value="{{ key }}"> {{ emoji }}{{ label }}</label>
+        {% for key,label,emoji,color,val,image in moods %}
+        <label class="mc"><input type="checkbox" name="moods" value="{{ key }}"> <img class="mood-img mood-img-sm" src="{% static image %}" alt="">{{ label }}</label>
         {% endfor %}
       </div>
     </div>

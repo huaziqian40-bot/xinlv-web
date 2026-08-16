@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block nav_home %}active{% endblock %}
 {% block content %}
 <section class="hero">
@@ -37,7 +38,7 @@
                   {% if not cell.in_future %}onclick="openMood('{{ cell.iso }}')"{% else %}disabled{% endif %}
                   {% if cell.entry %}style="background:{{ cell.entry.info.color }}22;border-color:{{ cell.entry.info.color }}"{% endif %}>
             <span class="dnum">{{ cell.day }}</span>
-            <span class="demoji">{% if cell.entry %}{{ cell.entry.info.emoji }}{% endif %}</span>
+            <span class="demoji">{% if cell.entry %}<img class="mood-img" src="{% static cell.entry.info.image %}" alt="">{% endif %}</span>
           </button>
         {% else %}<div class="day empty"></div>{% endif %}
       {% endfor %}{% endfor %}
@@ -72,7 +73,7 @@
     {% for e in recent %}
     <a class="chip" href="/result/?mood={{ e.mood }}&date={{ e.date|date:'Y-m-d' }}"
        style="border-color:{{ e.info.color }}">
-      {{ e.info.emoji }} {{ e.date|date:'n月j日' }} {{ e.info.label }}
+      <img class="mood-img" src="{% static e.info.image %}" alt=""> {{ e.date|date:'n月j日' }} {{ e.info.label }}
     </a>
     {% endfor %}
   </div>
@@ -89,10 +90,10 @@
     <div id="day-list" class="day-list" style="display:none"></div>
     <div id="add-label" class="add-label" style="display:none">再记一条 ↓</div>
     <div class="mood-grid">
-      {% for key,label,emoji,color,val in moods %}
+      {% for key,label,emoji,color,val,image in moods %}
       <label class="mood-opt" style="--c:{{ color }}">
         <input type="radio" name="mood" value="{{ key }}" required onchange="updateIntensityColor('{{ color }}')">
-        <span class="me">{{ emoji }}</span>
+        <span class="me"><img class="mood-img" src="{% static image %}" alt=""></span>
         <span class="ml">{{ label }}</span>
       </label>
       {% endfor %}
@@ -127,6 +128,8 @@
 {% block script %}
 <script>
 const MOOD_META = JSON.parse(document.getElementById('mood-meta').textContent);
+const STATIC_PREFIX = '{% get_static_prefix %}';
+function moodImg(meta){ return '<img class="mood-img" src="' + STATIC_PREFIX + meta.image + '" alt="">'; }
 const IS_AUTHED = {% if user.is_authenticated %}true{% else %}false{% endif %};
 const KEY = 'moodlog';
 const load  = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } };
@@ -163,7 +166,7 @@ function openMood(iso){
       if(data.entries && data.entries.length){
         listBox.innerHTML = data.entries.map(e=>
           `<div class="day-item" style="border-color:${e.color}">
-             <span class="di-emoji">${e.emoji}</span>
+             <span class="di-emoji"><img class="mood-img" src="${STATIC_PREFIX}${e.image}" alt=""></span>
              <span class="di-main"><b>${e.label}</b>${e.note ? ' · '+escapeHtml(e.note) : ''}</span>
              <span class="di-time">${e.time}</span>
            </div>`).join('');
@@ -210,8 +213,8 @@ function paintLocal(){
     if(rec && MOOD_META[rec.mood]){
       const c = MOOD_META[rec.mood].color;
       btn.style.background = c + '22'; btn.style.borderColor = c;
-      if(em) em.textContent = MOOD_META[rec.mood].emoji;
-    } else if(em){ em.textContent=''; btn.style.background=''; btn.style.borderColor=''; }
+      if(em) em.innerHTML = moodImg(MOOD_META[rec.mood]);
+    } else if(em){ em.innerHTML=''; btn.style.background=''; btn.style.borderColor=''; }
   });
   // 最近 7 条
   const keys = Object.keys(o).sort().reverse().slice(0,7);
@@ -221,7 +224,7 @@ function paintLocal(){
     keys.forEach(iso=>{
       const r = o[iso], meta = MOOD_META[r.mood]; if(!meta) return;
       const [y,m,d] = iso.split('-');
-      html += `<a class="chip" href="/result/?mood=${r.mood}&date=${iso}" style="border-color:${meta.color}">${meta.emoji} ${+m}月${+d}日 ${meta.label}</a>`;
+      html += `<a class="chip" href="/result/?mood=${r.mood}&date=${iso}" style="border-color:${meta.color}">${moodImg(meta)} ${+m}月${+d}日 ${meta.label}</a>`;
     });
     wrap.innerHTML = html + '</div>';
   }
@@ -280,7 +283,7 @@ paintLocal();
       html += `<div class="wk-track">`;
       items.forEach(e=>{
         const topPct = (e.minutes / 1440) * 100;
-        html += `<div class="wk-dot" style="top:${topPct}%;border-color:${e.color}" title="${e.time} ${e.label}${e.note?(' · '+escapeHtml(e.note)):''}">${e.emoji}</div>`;
+        html += `<div class="wk-dot" style="top:${topPct}%;border-color:${e.color}" title="${e.time} ${e.label}${e.note?(' · '+escapeHtml(e.note)):''}"><img class="mood-img" src="${STATIC_PREFIX}${e.image}" alt=""></div>`;
       });
       html += `</div></div>`;
     });

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 <section class="result-head" style="--c:{{ rec.info.color }}">
-  <div class="big-emoji">{{ rec.info.emoji }}</div>
+  <div class="big-emoji"><img class="big-mood-img" src="{% static rec.info.image %}" alt=""></div>
   <h1>{% if date_label %}{{ date_label }}，{% endif %}{{ T.you_feel }}<span style="color:{{ rec.info.color }}">{{ rec.info.label }}</span></h1>
   {% if note %}<p class="note">“{{ note }}”</p>{% endif %}
   {% if intensity_level %}

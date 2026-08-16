@@ -58,6 +58,13 @@ a{color:var(--accent-d); text-decoration:none; transition:color .18s ease}
 .day.future{opacity:.35; cursor:not-allowed}
 .dnum{font-size:.9rem}
 .demoji{font-size:1.1rem; margin-top:2px}
+.mood-img{width:1.1rem; height:1.1rem; vertical-align:middle; object-fit:contain}
+.mood-img-sm{width:.85rem; height:.85rem; vertical-align:middle}
+.big-mood-img{width:3.5rem; height:3.5rem; object-fit:contain; display:inline-block}
+.badge-img{width:1.2rem; height:1.2rem; vertical-align:middle}
+.mood-opt .me .mood-img{width:1.4rem; height:1.4rem}
+.fi-emoji .mood-img{width:1.4rem; height:1.4rem}
+.wk-dot .mood-img{width:1rem; height:1rem}
 
 .recent{margin-top:2rem}
 .recent h3{font-size:1rem; color:var(--muted); font-weight:600}
@@ -95,7 +102,7 @@ button.ghost{background:transparent; border:1.5px solid var(--line); border-radi
 
 /* 结果页 */
 .result-head{text-align:center; margin:1rem 0 2rem}
-.big-emoji{font-size:3.5rem}
+.big-emoji{display:inline-block; animation:floaty 3.2s ease-in-out infinite}
 .result-head h1{font-size:1.5rem; margin:.3rem 0}
 .note{color:var(--muted); font-style:italic}
 .block{background:var(--card); border-radius:16px; padding:1.3rem 1.5rem; margin-bottom:1.2rem;
@@ -432,7 +439,7 @@ button.ghost.small{align-self:flex-start}
 .pf-avatar-ph{background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center;
   font-size:2rem; font-weight:700}
 .pf-meta h1{margin:0; font-size:1.4rem; display:flex; align-items:center; gap:.3rem; flex-wrap:wrap}
-.badge{font-size:1.2rem}
+.badge{display:inline-block; transition:transform .2s ease; line-height:0}
 .pf-bio{color:var(--muted); margin:.3rem 0}
 .pf-stats{display:flex; gap:1.2rem; font-size:.9rem; color:var(--muted); margin-top:.3rem}
 .pf-stats b{color:var(--ink); font-size:1.05rem}
@@ -538,7 +545,7 @@ button.primary:active,a.primary:active{transform:translateY(0)}
 @keyframes modalIn{from{opacity:0; transform:translateY(16px) scale(.98)}to{opacity:1; transform:none}}
 
 /* 徽章：轻微悬浮动效 */
-.badge{display:inline-block; transition:transform .2s ease}
+.badge{display:inline-block; transition:transform .2s ease; line-height:0}
 .badge:hover{transform:scale(1.2) rotate(-6deg)}
 
 /* 页脚：柔和分隔 */

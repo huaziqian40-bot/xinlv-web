@@ -18,8 +18,8 @@
     </div>
     <p class="field-label">这首歌适合哪些心情？（不选 = 所有心情都可能推荐）</p>
     <div class="mood-checks">
-      {% for k,label,emoji,color,val in moods %}
-      <label class="mc"><input type="checkbox" name="moods" value="{{ k }}"> {{ emoji }} {{ label }}</label>
+      {% for k,label,emoji,color,val,image in moods %}
+      <label class="mc"><input type="checkbox" name="moods" value="{{ k }}"> <img class="mood-img mood-img-sm" src="{% static image %}" alt=""> {{ label }}</label>
       {% endfor %}
     </div>
     <button class="primary" type="submit">上传</button>
@@ -40,8 +40,8 @@
       </div>
       <audio controls preload="none" src="{{ s.audio.url }}"></audio>
       <div class="mood-checks small">
-        {% for k,label,emoji,color,val in moods %}
-        <label class="mc"><input type="checkbox" name="moods" value="{{ k }}" {% if k in s.moods %}checked{% endif %}> {{ emoji }} {{ label }}</label>
+        {% for k,label,emoji,color,val,image in moods %}
+        <label class="mc"><input type="checkbox" name="moods" value="{{ k }}" {% if k in s.moods %}checked{% endif %}> <img class="mood-img mood-img-sm" src="{% static image %}" alt=""> {{ label }}</label>
         {% endfor %}
       </div>
       <button class="ghost small" type="submit">保存修改</button>

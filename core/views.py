@@ -103,6 +103,7 @@ def day_entries(request):
             "mood": e.mood,
             "label": info.get("label", e.mood),
             "emoji": info.get("emoji", ""),
+            "image": info.get("image", ""),
             "color": info.get("color", "#ccc"),
             "note": e.note,
             "time": timezone.localtime(t).strftime("%H:%M") if t else "",
@@ -126,6 +127,7 @@ def calendar_data(request):
             return None
         info = MOOD_MAP.get(e.mood, {})
         return {"mood": e.mood, "emoji": info.get("emoji", ""),
+                "image": info.get("image", ""),
                 "color": info.get("color", "#ccc"), "label": info.get("label", e.mood)}
 
     if scope == "year":
@@ -153,7 +155,8 @@ def calendar_data(request):
             info = MOOD_MAP.get(e.mood, {})
             t = e.at or e.created_at
             by_day.setdefault(e.date.isoformat(), []).append({
-                "mood": e.mood, "emoji": info.get("emoji", ""), "color": info.get("color", "#ccc"),
+                "mood": e.mood, "emoji": info.get("emoji", ""), "image": info.get("image", ""),
+                "color": info.get("color", "#ccc"),
                 "label": info.get("label", e.mood), "note": e.note,
                 "time": timezone.localtime(t).strftime("%H:%M") if t else "",
                 "minutes": (timezone.localtime(t).hour * 60 + timezone.localtime(t).minute) if t else 0,
@@ -315,6 +318,7 @@ def disclaimer(request):
 def download(request):
     """下载页面：展示各平台客户端下载链接。"""
     android_versions = [
+        ("1.2.27", "download/android/xinlv-1.2.27.apk"),
         ("1.2.26", "download/android/xinlv-1.2.26.apk"),
         ("1.2.24", "download/android/xinlv-1.2.24.apk"),
         ("1.2.23", "download/android/xinlv-1.2.23.apk"),
@@ -328,12 +332,14 @@ def download(request):
         ("1.2.10", "download/android/xinlv-1.2.10.apk"),
     ]
     windows_versions = [
+        ("1.1.3", "download/windows/xinlv-1.1.3.exe"),
         ("1.1.2", "download/windows/xinlv-1.1.2.exe"),
         ("1.0.4", "download/windows/xinlv-1.0.4.exe"),
         ("1.0.3", "download/windows/xinlv-1.0.3.exe"),
         ("1.0.2", "download/windows/xinlv-1.0.2.exe"),
     ]
     macos_versions = [
+        ("1.1.3", "download/macos/心履-1.1.3.dmg"),
         ("1.1.2", "download/macos/心履-1.1.2.dmg"),
         ("1.0.9", "download/macos/心履-1.0.9.dmg"),
         ("1.0.7", "download/macos/心履-1.0.7.dmg"),

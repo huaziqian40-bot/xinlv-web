@@ -8,19 +8,19 @@ import uuid as _uuid
 # ---- 心情定义 ----
 # valence: 1 = 正面, 0 = 中性, -1 = 负面
 MOODS = [
-    ("happy",    "开心",  "😄", "#FFD56B",  1),
-    ("calm",     "平静",  "🙂", "#9BD1C6",  1),
-    ("excited",  "兴奋",  "🤩", "#FF9F68",  1),
-    ("grateful", "感恩",  "🥰", "#F7A6C4",  1),
-    ("tired",    "疲惫",  "😪", "#A6A6C9", -1),
-    ("anxious",  "焦虑",  "😟", "#7FA6E8", -1),
-    ("sad",      "难过",  "😢", "#6D8FB8", -1),
-    ("angry",    "愤怒",  "😠", "#E8736B", -1),
-    ("lonely",   "孤独",  "🌧️", "#8E94B8", -1),
-    ("numb",     "麻木",  "😶", "#B0B0B0",  0),
+    ("happy",    "开心",  "😄", "#FFD56B",  1,  "images/mood_happy.png"),
+    ("calm",     "平静",  "🙂", "#9BD1C6",  1,  "images/mood_calm.png"),
+    ("excited",  "兴奋",  "🤩", "#FF9F68",  1,  "images/mood_excited.png"),
+    ("grateful", "感恩",  "🥰", "#F7A6C4",  1,  "images/mood_grateful.png"),
+    ("tired",    "疲惫",  "😪", "#A6A6C9", -1,  "images/mood_tired.png"),
+    ("anxious",  "焦虑",  "😟", "#7FA6E8", -1,  "images/mood_anxious.png"),
+    ("sad",      "难过",  "😢", "#6D8FB8", -1,  "images/mood_sad.png"),
+    ("angry",    "愤怒",  "😠", "#E8736B", -1,  "images/mood_angry.png"),
+    ("lonely",   "孤独",  "🌧️", "#8E94B8", -1, "images/mood_lonely.png"),
+    ("numb",     "麻木",  "😶", "#B0B0B0",  0,  "images/mood_numb.png"),
 ]
 MOOD_KEYS = [m[0] for m in MOODS]
-MOOD_MAP = {m[0]: {"label": m[1], "emoji": m[2], "color": m[3], "valence": m[4]} for m in MOODS}
+MOOD_MAP = {m[0]: {"label": m[1], "emoji": m[2], "color": m[3], "valence": m[4], "image": m[5]} for m in MOODS}
 
 
 class AliveManager(models.Manager):
@@ -232,14 +232,16 @@ class UserProfile(models.Model):
         return f"profile:{self.user.username}"
 
 
-# 连胜徽章阈值（天）
+# 连胜徽章阈值（天）：元组 (天数, emoji, 名称, 素材图片路径, 悬停文案即徽章效果说明)
 BADGES = [
-    (5,    "🌱", "初心"),
-    (30,   "🌿", "坚持"),
-    (100,  "🌳", "百日"),
-    (365,  "🏆", "一年"),
-    (1000, "👑", "千日"),
+    (5,    "🌱", "初心", "images/badge_5.png",    "连续记录 5 天"),
+    (30,   "🌿", "坚持", "images/badge_30.png",   "连续记录 30 天"),
+    (100,  "🌳", "百日", "images/badge_100.png",  "连续记录 100 天"),
+    (365,  "🏆", "一年", "images/badge_365.png",  "连续记录 365 天"),
+    (1000, "👑", "千日", "images/badge_1000.png", "连续记录 1000 天"),
 ]
+BADGE_EMOJI = {t: e for t, e, *_ in BADGES}         # 旧代码兜底（API 情绪历史里不用）
+BADGE_MAP = {t: {"emoji": e, "name": n, "image": img, "desc": d} for t, e, n, img, d in BADGES}
 
 
 class UserContribution(models.Model):
@@ -293,7 +295,7 @@ def compute_streak_and_badges(user):
     while d in dates:
         streak += 1
         d -= _dt.timedelta(days=1)
-    earned = [{"emoji": e, "name": n, "days": t} for (t, e, n) in BADGES if streak >= t]
+    earned = [dict(BADGE_MAP[t]) | {"days": t} for t in BADGE_MAP if streak >= t]
     # 也计算历史最高连续（用于即使当前断了也保留徽章）
     best = 0; cur = 0; prev = None
     for dd in sorted(dates):
@@ -302,5 +304,5 @@ def compute_streak_and_badges(user):
         else:
             cur = 1
         best = max(best, cur); prev = dd
-    earned_best = [{"emoji": e, "name": n, "days": t} for (t, e, n) in BADGES if best >= t]
+    earned_best = [dict(BADGE_MAP[t]) | {"days": t} for t in BADGE_MAP if best >= t]
     return streak, earned_best

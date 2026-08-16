@@ -311,7 +311,7 @@ def catalog(request):
             return ""
     return JsonResponse({
         "moods": [{"key": m[0], "label": m[1], "emoji": m[2],
-                   "color": m[3], "valence": m[4]} for m in MOODS],
+                   "color": m[3], "valence": m[4], "image": m[5]} for m in MOODS],
         "songs": [{"id": s.id, "title": s.title, "artist": s.artist,
                    "url": abs_url(s.audio), "moods": s.mood_list()}
                   for s in Song.objects.all()],
