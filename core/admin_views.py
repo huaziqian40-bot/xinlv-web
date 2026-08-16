@@ -142,7 +142,7 @@ def activities(request):
 
 @staff_required
 def site(request):
-    """编辑「关于我们」（Markdown）+ 联系方式 + 危机热线。"""
+    """编辑「关于我们」（Markdown）+ 联系方式 + 危机热线 + AI 树洞提示词。"""
     s = SiteSettings.load()
     if request.method == "POST":
         s.about_content = request.POST.get("about_content", "")
@@ -152,6 +152,7 @@ def site(request):
         s.contact_bilibili = request.POST.get("contact_bilibili", "").strip()
         s.crisis_hotline = request.POST.get("crisis_hotline", "").strip()
         s.disclaimer_content = request.POST.get("disclaimer_content", "")
+        s.ai_prompt = request.POST.get("ai_prompt", "")
         s.save()
         messages.success(request, "已保存。访客刷新页面即可看到。")
         return redirect("manage_site")

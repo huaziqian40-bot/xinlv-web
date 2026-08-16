@@ -373,8 +373,9 @@ def _build_mood_context(request):
         level_names = {1: "略微", 2: "有点", 3: "相当", 4: "十分"}
         level_str = level_names.get(e.intensity_level, "")
         d = e.date.strftime("%m月%d日")
-        parts.append(f"{d} 记录了「{label}」{level_str}")
-    return "用户最近的心情记录（供参考，对话中自然提起即可，不要罗列）：" + "；".join(parts)
+        note = f"，备注：{e.note[:60]}" if e.note else ""
+        parts.append(f"{d} 记录了「{label}」{level_str}{note}")
+    return "以下是用户最近的心情记录，供你在陪伴时自然、轻描淡写地提起，不要罗列或逐条分析：" + "；".join(parts)
 
 
 def _chat_qs(request):

@@ -157,6 +157,10 @@ class SiteSettings(models.Model):
     disclaimer_content = models.TextField(
         blank=True, default="",
         help_text="免责声明正文，支持 Markdown。留空则用内置默认版本。")
+    ai_prompt = models.TextField(
+        blank=True, default="",
+        help_text="AI 树洞的系统提示词（人设与对话规则），留空则用内置默认版。"
+                  "安全底线部分不可编辑，始终附加。")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
