@@ -318,6 +318,7 @@ def disclaimer(request):
 def download(request):
     """下载页面：展示各平台客户端下载链接。"""
     android_versions = [
+        ("1.2.29", "download/android/xinlv-1.2.29.apk"),
         ("1.2.28", "download/android/xinlv-1.2.28.apk"),
         ("1.2.27", "download/android/xinlv-1.2.27.apk"),
         ("1.2.26", "download/android/xinlv-1.2.26.apk"),
