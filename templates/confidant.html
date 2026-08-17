@@ -170,11 +170,7 @@ async function pollProactive(){
     const data = await r.json();
     if(data.messages && data.messages.length){
       for(const m of data.messages){
-        const label = m.is_weekly_essay ? '📝 每周小结' : '💬';
-        const d = document.createElement('div');
-        d.className = 'bubble assistant proactive';
-        d.innerHTML = '<div class="proactive-label">' + label + '</div><div class="proactive-body">' + escapeHtml(m.content) + '</div>';
-        chat.appendChild(d);
+        addBubble(m.content, 'assistant');
       }
       chat.scrollTop = chat.scrollHeight;
       // 如果有语音朗读开启，朗读最新一条
@@ -184,11 +180,6 @@ async function pollProactive(){
     }
     lastProactiveCheck = data.server_time || new Date().toISOString();
   }catch(e){ /* 静默失败，下次再轮询 */ }
-}
-function escapeHtml(s){
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
 }
 // 每 60 秒轮询一次
 setInterval(pollProactive, 60000);

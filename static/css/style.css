@@ -133,9 +133,6 @@ code{background:var(--bg); padding:.1rem .4rem; border-radius:5px; font-size:.85
 .bubble.assistant{background:var(--bg); align-self:flex-start; border-bottom-left-radius:4px}
 .bubble.user{background:var(--accent); color:#fff; align-self:flex-end; border-bottom-right-radius:4px}
 .bubble.typing{opacity:.6; font-style:italic}
-.bubble.proactive{background:#f0f7f4; border:1px solid var(--accent); border-left:3px solid var(--accent)}
-.bubble.proactive .proactive-label{font-size:.75rem; color:var(--accent); font-weight:600; margin-bottom:.3rem; text-transform:uppercase}
-.bubble.proactive .proactive-body{font-size:.95rem}
 .composer{display:flex; gap:.6rem; margin-top:1rem; align-items:flex-end}
 .composer textarea{flex:1; max-height:120px; overflow-y:auto}
 .conf-tools{text-align:center; margin-top:.6rem}
