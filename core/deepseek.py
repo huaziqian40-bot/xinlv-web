@@ -44,13 +44,21 @@ def get_system_prompt():
     return base + SAFETY_FOOTER
 
 
-def chat(history):
+def chat(history, model=None, max_tokens=None, temperature=None, prompt=None, system=True):
     """history: [{'role': 'user'/'assistant', 'content': str}, ...]
-    返回助手回复文本；出错时返回 (None, 错误信息)。"""
+    返回助手回复文本；出错时返回 (None, 错误信息)。
+    model/max_tokens/temperature: 覆盖默认值（默认取 settings 配置：deepseek-v4-flash / 800 / 0.8）。
+    prompt: 覆盖默认系统提示词（每周小结等场景用，安全底线仍附加）。
+    system=False 时不注入系统提示词（调用方已在 history 里自带 system 消息）。"""
     if not settings.DEEPSEEK_API_KEY:
         return None, "（树洞还没配置 DeepSeek API Key，请在 .env 里填 DEEPSEEK_API_KEY）"
 
-    messages = [{"role": "system", "content": get_system_prompt()}] + history
+    messages = history
+    if system:
+        if prompt is not None:
+            messages = [{"role": "system", "content": prompt + SAFETY_FOOTER}] + history
+        else:
+            messages = [{"role": "system", "content": get_system_prompt()}] + history
     try:
         resp = requests.post(
             f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
@@ -59,14 +67,14 @@ def chat(history):
                 "Content-Type": "application/json",
             },
             json={
-                "model": settings.DEEPSEEK_MODEL,
+                "model": model or settings.DEEPSEEK_MODEL,
                 "messages": messages,
-                "temperature": 0.8,          # 降理智放到 0.8，减少胡言乱语/幻觉
-                "max_tokens": 800,
+                "temperature": 0.8 if temperature is None else temperature,  # 降理智放到 0.8，减少胡言乱语/幻觉
+                "max_tokens": 800 if max_tokens is None else max_tokens,
                 # V4 默认开启思考模式；树洞用普通对话即可，关掉更快更省。
                 "thinking": {"type": "disabled"},
             },
-            timeout=60,
+            timeout=90,
         )
         resp.raise_for_status()
         data = resp.json()

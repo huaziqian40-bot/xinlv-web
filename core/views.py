@@ -451,6 +451,28 @@ def confidant_clear(request):
     return JsonResponse({"ok": True})
 
 
+@login_required
+def confidant_proactive(request):
+    """返回当前登录用户最近未读的主动消息（含每周小结），供前端轮询。"""
+    since = request.GET.get("since", "")
+    try:
+        since_dt = dt.datetime.fromisoformat(since)
+    except (ValueError, TypeError):
+        since_dt = timezone.now() - dt.timedelta(hours=24)
+    if timezone.is_naive(since_dt):
+        since_dt = timezone.make_aware(since_dt, dt.timezone.utc)
+    qs = ChatMessage.objects.filter(
+        user=request.user, role="assistant",
+        is_proactive=True, created_at__gt=since_dt).order_by("created_at")
+    return JsonResponse({
+        "server_time": timezone.now().isoformat(),
+        "messages": [
+            {"role": m.role, "content": m.content,
+             "is_weekly_essay": m.is_weekly_essay,
+             "created_at": timezone.localtime(m.created_at).isoformat()}
+            for m in qs]})
+
+
 @require_POST
 def tts_speak(request):
     """把一段文字合成为自然人声，返回 base64 mp3 给前端播放。"""

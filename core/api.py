@@ -417,6 +417,24 @@ def chat_history(request):
          "created_at": _iso(m.created_at)} for m in msgs]})
 
 
+@api_login_required
+def chat_proactive(request):
+    """?since=<ISO8601>：返回该时间之后新增的 AI 主动消息（含每周小结），供客户端轮询。
+    不带 since 时返回最近 24 小时内的主动消息。"""
+    since = _parse_dt(request.GET.get("since"))
+    if since is None:
+        since = timezone.now() - dt.timedelta(hours=24)
+    qs = ChatMessage.objects.filter(
+        user=request.api_user, role="assistant",
+        is_proactive=True, created_at__gt=since).order_by("created_at")
+    return JsonResponse({
+        "server_time": timezone.now().isoformat(),
+        "messages": [
+            {"role": m.role, "content": m.content,
+             "is_weekly_essay": m.is_weekly_essay,
+             "created_at": _iso(m.created_at)} for m in qs]})
+
+
 @require_POST
 @api_login_required
 def chat_clear(request):

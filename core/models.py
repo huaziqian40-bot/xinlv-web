@@ -136,6 +136,10 @@ class ChatMessage(models.Model):
     session_key = models.CharField(max_length=40, blank=True, default="", db_index=True)
     role = models.CharField(max_length=12)  # user / assistant
     content = models.TextField()
+    is_proactive = models.BooleanField(default=False, db_index=True,
+        help_text="AI 主动发送的消息（非用户触发）")
+    is_weekly_essay = models.BooleanField(default=False, db_index=True,
+        help_text="是否为每周小结")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -193,6 +197,29 @@ class GameConfig(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class ProactiveSchedule(models.Model):
+    """AI 主动消息的发送计划：每个用户每天 2-4 次随机时段 + 每周日 22:00 小结。
+    由 management command 按需创建/查询，不依赖外部调度器记录状态。"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="proactive_schedules")
+    date = models.DateField(db_index=True, help_text="计划发送日期")
+    slot_index = models.IntegerField(
+        help_text="当天第几个时段（0 基），用于区分 2-4 个时段")
+    slot_time = models.TimeField(help_text="计划发送的具体时间")
+    executed = models.BooleanField(default=False, db_index=True,
+        help_text="是否已执行")
+    is_weekly_essay = models.BooleanField(default=False, db_index=True,
+        help_text="是否为每周小结")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("user", "date", "slot_index")]
+        ordering = ["user", "date", "slot_index"]
+
+    def __str__(self):
+        return f"{self.user.username} {self.date} slot{self.slot_index}"
 
 
 class BilibiliVideo(models.Model):

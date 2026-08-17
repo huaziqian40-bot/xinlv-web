@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/v1/recommend/", api.recommend, name="api_recommend"),
     path("api/v1/chat/", api.chat, name="api_chat"),
     path("api/v1/chat/history/", api.chat_history, name="api_chat_history"),
+    path("api/v1/chat/proactive/", api.chat_proactive, name="api_chat_proactive"),
     path("api/v1/chat/clear/", api.chat_clear, name="api_chat_clear"),
     path("api/v1/profile/", api.profile, name="api_profile"),
     path("api/game-config/", api.game_config, name="game_config"),
@@ -45,6 +46,7 @@ urlpatterns = [
     path("confidant/", views.confidant, name="confidant"),
     path("confidant/send/", views.confidant_send, name="confidant_send"),
     path("confidant/clear/", views.confidant_clear, name="confidant_clear"),
+    path("confidant/proactive/", views.confidant_proactive, name="confidant_proactive"),
     path("confidant/tts/", views.tts_speak, name="tts_speak"),
 
     # ---- 用户认证（极简：账号+密码）----
