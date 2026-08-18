@@ -3,6 +3,8 @@
 安全加固（2026-08-07）：
 - check_image 用 Pillow Image.open().verify() 校验文件内容确为图片，防伪装成 .jpg 的任意文件；
 - 新增 check_http_url：只允许 http/https 且限长 400，堵住 javascript: 等伪协议注入。"""
+from urllib.parse import urlsplit
+
 from django.conf import settings
 
 AUDIO_EXT = {"mp3", "m4a", "flac", "ogg", "wav", "aac"}
@@ -45,6 +47,12 @@ def check_http_url(url):
         return "链接不能为空。"
     if len(url) > 400:
         return "链接太长了。"
-    if not (url.startswith("http://") or url.startswith("https://")):
-        return "链接必须以 http:// 或 https:// 开头。"
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return "链接格式不正确。"
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return "链接必须是有效的 http:// 或 https:// 地址。"
+    if parsed.username or parsed.password:
+        return "链接不能包含账号或密码。"
     return None

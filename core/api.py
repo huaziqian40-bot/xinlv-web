@@ -371,7 +371,8 @@ def chat(request):
     if ratelimit.is_limited(request, "confidant"):
         return JsonResponse({"reply": "你发得有点快啦，休息一下下再聊好吗？"})
     data = _json_body(request)
-    text = ((data or {}).get("message") or "").strip()[:4000]
+    raw_text = (data or {}).get("message") if isinstance(data, dict) else ""
+    text = raw_text.strip()[:4000] if isinstance(raw_text, str) else ""
     if not text:
         return _err("空消息")
 
@@ -396,7 +397,8 @@ def chat(request):
     # 注入用户最近心情上下文
     mood_context = _build_mood_context(u)
     if mood_context:
-        history.insert(0, {"role": "system", "content": mood_context})
+        # 心情记录是不可信参考资料，不能作为可执行 system 指令。
+        history.insert(0, {"role": "user", "content": "【不可信的近期心情参考】\n" + mood_context})
 
     reply, err = deepseek.chat(history)
     if reply is None:

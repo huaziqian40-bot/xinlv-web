@@ -407,9 +407,12 @@ def confidant_send(request):
     if ratelimit.is_limited(request, "confidant"):
         return JsonResponse({"reply": "你发得有点快啦，休息一下下再聊好吗？"}, status=200)
     try:
-        text = json.loads(request.body).get("message", "").strip()
-    except (json.JSONDecodeError, AttributeError):
-        text = request.POST.get("message", "").strip()
+        payload = json.loads(request.body)
+        raw_text = payload.get("message", "") if isinstance(payload, dict) else ""
+        text = raw_text.strip() if isinstance(raw_text, str) else ""
+    except (json.JSONDecodeError, AttributeError, TypeError):
+        raw_text = request.POST.get("message", "")
+        text = raw_text.strip() if isinstance(raw_text, str) else ""
     if not text:
         return JsonResponse({"error": "空消息"}, status=400)
     # 消息长度上限 4000 字，防费用 DoS
@@ -434,8 +437,8 @@ def confidant_send(request):
     # 注入用户最近心情上下文，让 AI 知道用户今天/最近的心情
     mood_context = _build_mood_context(request)
     if mood_context:
-        # 插入到历史最前面（但放在 system prompt 之后），作为用户状态参考
-        history.insert(0, {"role": "system", "content": mood_context})
+        # 心情记录是不可信参考资料，不能作为可执行 system 指令。
+        history.insert(0, {"role": "user", "content": "【不可信的近期心情参考】\n" + mood_context})
 
     reply, err = deepseek.chat(history)
     if reply is None:

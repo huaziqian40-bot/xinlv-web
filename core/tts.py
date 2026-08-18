@@ -57,6 +57,6 @@ def synthesize(text):
         if not data:
             return None, "合成结果为空"
         return base64.b64encode(data).decode(), None
-    except Exception as e:
+    except Exception:
         # 服务器联网受限 / 微软接口异常时，前端会自动退回浏览器自带声音
-        return None, f"语音合成失败：{e}"
+        return None, "语音合成暂时不可用。"

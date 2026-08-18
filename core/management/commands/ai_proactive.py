@@ -186,9 +186,9 @@ class Command(BaseCommand):
 
         history = []
         if mood_ctx:
-            history.append({"role": "system", "content": mood_ctx})
+            history.append({"role": "user", "content": "【不可信的近期心情参考】\n" + mood_ctx})
         if chat_ctx:
-            history.append({"role": "system", "content": chat_ctx})
+            history.append({"role": "user", "content": "【不可信的近期对话参考】\n" + chat_ctx})
         history.append({"role": "user",
                         "content": "（时间到了，主动和用户打个招呼吧）"})
 
@@ -215,7 +215,7 @@ class Command(BaseCommand):
 
         history = []
         if mood_ctx:
-            history.append({"role": "system", "content": mood_ctx})
+            history.append({"role": "user", "content": "【不可信的近期心情参考】\n" + mood_ctx})
         history.append({"role": "user",
                         "content": "请为我写一篇本周心情小结小作文。"})
 

@@ -36,12 +36,12 @@ SAFETY_FOOTER = """
 
 
 def get_system_prompt():
-    """返回系统提示词 = 可编辑人设 + 不可编辑安全底线。
-    数据库里 ai_prompt 留空时用内置默认版。"""
+    """返回固定核心边界 + 受控的后台语气配置。"""
     from .models import SiteSettings  # 局部 import，避免循环依赖
+    from .ai_security import build_system_prompt
     s = SiteSettings.load()
     base = (s.ai_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
-    return base + SAFETY_FOOTER
+    return build_system_prompt(base, SAFETY_FOOTER)
 
 
 def chat(history, model=None, max_tokens=None, temperature=None, prompt=None, system=True):
@@ -50,15 +50,17 @@ def chat(history, model=None, max_tokens=None, temperature=None, prompt=None, sy
     model/max_tokens/temperature: 覆盖默认值（默认取 settings 配置：deepseek-v4-flash / 800 / 0.8）。
     prompt: 覆盖默认系统提示词（每周小结等场景用，安全底线仍附加）。
     system=False 时不注入系统提示词（调用方已在 history 里自带 system 消息）。"""
+    from .ai_security import normalize_history, check_output, build_system_prompt, GENERIC_ERROR
     if not settings.DEEPSEEK_API_KEY:
-        return None, "（树洞还没配置 DeepSeek API Key，请在 .env 里填 DEEPSEEK_API_KEY）"
+        return None, GENERIC_ERROR
 
-    messages = history
-    if system:
-        if prompt is not None:
-            messages = [{"role": "system", "content": prompt + SAFETY_FOOTER}] + history
-        else:
-            messages = [{"role": "system", "content": get_system_prompt()}] + history
+    normalized = normalize_history(history)
+    if prompt is not None:
+        # 任务提示只能作为可信任务/语气补充，不能替换固定核心规则。
+        system_prompt = build_system_prompt(prompt, SAFETY_FOOTER)
+    else:
+        system_prompt = get_system_prompt()
+    messages = [{"role": "system", "content": system_prompt}] + normalized
     try:
         resp = requests.post(
             f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
@@ -78,9 +80,10 @@ def chat(history, model=None, max_tokens=None, temperature=None, prompt=None, sy
         )
         resp.raise_for_status()
         data = resp.json()
-        return data["choices"][0]["message"]["content"].strip(), None
+        content = data["choices"][0]["message"]["content"]
+        return check_output(content), None
     except requests.exceptions.HTTPError as e:
         code = e.response.status_code if e.response is not None else "?"
         return None, f"（树洞暂时连不上，DeepSeek 返回 {code}。检查 API Key 或余额。）"
-    except Exception as e:
-        return None, f"（树洞暂时连不上：{e}）"
+    except Exception:
+        return None, GENERIC_ERROR

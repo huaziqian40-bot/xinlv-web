@@ -22,7 +22,8 @@ def env_list(key, default=""):
 # ---- 安全相关 ----
 _DEV_SECRET = "dev-only-key-please-change-me-in-production"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _DEV_SECRET)
-DEBUG = env_bool("DJANGO_DEBUG", "True")
+# 默认关闭调试，避免缺少 .env 时泄露调试页和敏感配置。
+DEBUG = env_bool("DJANGO_DEBUG", "False")
 
 # 生产环境（DEBUG=False）禁止使用内置开发密钥，否则会话/CSRF 可被伪造（拒绝启动是故意的）
 if not DEBUG and SECRET_KEY == _DEV_SECRET:
@@ -31,7 +32,7 @@ if not DEBUG and SECRET_KEY == _DEV_SECRET:
         "生产环境必须通过 .env 设置 DJANGO_SECRET_KEY，禁止使用内置开发密钥。")
 
 # 内网穿透时必须把你的公网域名/IP 加进来。默认放开方便本地调试。
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "*") or ["*"]
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1") or ["localhost", "127.0.0.1"]
 
 # Django 4+ 通过公网域名提交 POST(树洞聊天、记录心情)需要这一项，
 # 否则会报 CSRF 403。把你的穿透域名写进 .env 的 CSRF_TRUSTED_ORIGINS。

@@ -75,10 +75,12 @@ def songs(request):
             f = request.FILES.get("audio")
             if not f:
                 messages.error(request, "请先选择一个音频文件。")
-            elif os.path.splitext(f.name)[1].lower() not in AUDIO_EXT:
-                messages.error(request, "只支持 mp3 / m4a / flac / ogg / wav / aac 格式。")
             else:
-                title = request.POST.get("title", "").strip() or os.path.splitext(f.name)[0]
+                err = limits.check_audio(f)
+                if err:
+                    messages.error(request, err)
+                    return redirect("manage_songs")
+                title = request.POST.get("title", "").strip()[:200] or os.path.splitext(f.name)[0]
                 Song.objects.create(
                     title=title, artist=request.POST.get("artist", "").strip(),
                     audio=f, moods=",".join(request.POST.getlist("moods")))
@@ -152,7 +154,7 @@ def site(request):
         s.contact_bilibili = request.POST.get("contact_bilibili", "").strip()
         s.crisis_hotline = request.POST.get("crisis_hotline", "").strip()
         s.disclaimer_content = request.POST.get("disclaimer_content", "")
-        s.ai_prompt = request.POST.get("ai_prompt", "")
+        s.ai_prompt = request.POST.get("ai_prompt", "")[:12000]
         s.save()
         messages.success(request, "已保存。访客刷新页面即可看到。")
         return redirect("manage_site")
