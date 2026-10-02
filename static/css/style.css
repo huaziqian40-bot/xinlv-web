@@ -249,12 +249,32 @@ button.ghost.small{align-self:flex-start}
 .auth-card .primary.big{width:100%; margin-top:.3rem}
 .auth-err{background:#fdecea; color:#c0392b; border-radius:10px; padding:.6rem; font-size:.9rem; margin-top:.8rem}
 .auth-alt{margin-top:1.2rem; color:var(--muted); font-size:.9rem}
+/* 跨站免密登录（core/phix_sso.py）：phix 官网 / PHL 网页端登录过的人不用再输一次密码 */
+.auth-sso{margin-top:1rem; display:block}
+.auth-sso .sso-btn{display:block; text-align:center; text-decoration:none; padding:.7rem .9rem;
+  border-radius:12px; border:1.5px solid var(--accent); color:var(--accent); font-weight:600;
+  transition:background .15s ease, color .15s ease}
+.auth-sso .sso-btn:hover{background:var(--accent); color:#fff}
+.auth-sso-hint{margin-top:.5rem; color:var(--muted); font-size:.82rem; line-height:1.5}
+.sso-link{font-weight:600}
 .hero-tip{font-size:.9rem; color:var(--muted); margin-top:.6rem}
 
 /* 登录后导入本地数据的提示条 */
 .import-banner{background:#fff7e6; border:1px solid #ffe0a3; border-radius:12px;
   padding:.8rem 1rem; margin-bottom:1rem; text-align:center}
 .import-banner button{margin-left:.5rem; padding:.35rem .9rem; font-size:.9rem}
+
+/* 账号迁移通告条（全站顶部，可后台关闭） */
+.migrate-notice{background:linear-gradient(135deg,#eef2fb,#e6eefa); border-bottom:1px solid #cdd9f4;
+  color:#3a5a9a; text-align:center; padding:.6rem 1rem; font-size:.92rem; line-height:1.5}
+.migrate-notice strong{color:#274b8f}
+/* 迁移后的恢复码一次性提示 */
+.recovery-notice{background:#fff7e6; border:1px solid #ffe0a3; border-radius:12px;
+  padding:1rem 1.2rem; margin:1rem auto 0; max-width:640px; text-align:center; color:#8a6d3b}
+.recovery-code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:1.3rem;
+  letter-spacing:.06em; background:var(--bg); border:1px dashed var(--line); border-radius:10px;
+  padding:.6rem 1rem; margin:.6rem 0; user-select:all}
+.recovery-hint{font-size:.82rem; color:var(--muted); margin:0}
 
 /* 关于我们 / Markdown 渲染 */
 .about{background:var(--card); border-radius:16px; padding:1.5rem 1.8rem; box-shadow:var(--shadow)}
@@ -810,4 +830,7 @@ input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{
 .modal-card ol li{color:#6b6560; font-size:.88rem; line-height:1.7; margin-bottom:.2rem}
 .modal-card .modal-close{position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:#8a847e; line-height:1}
 .modal-card .modal-close:hover{color:#2e2b29}
+
+/* phix 账号头像占位（首字母圆形）；真实头像由客户端同步 profile 对象后替换 */
+.phix-avatar{display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; margin-right:6px; border-radius:50%; background:linear-gradient(135deg,#9A2BE2,#E293D6); color:#fff; font-size:.8rem; font-weight:700; vertical-align:-8px; user-select:none}
 

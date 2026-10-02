@@ -165,6 +165,9 @@ class SiteSettings(models.Model):
         blank=True, default="",
         help_text="AI 树洞的系统提示词（人设与对话规则），留空则用内置默认版。"
                   "安全底线部分不可编辑，始终附加。")
+    show_migration_notice = models.BooleanField(
+        default=True,
+        help_text="顶部通告条：提醒老用户直接用原用户名密码登录（首次登录自动迁移到 phix 账号）。")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -248,12 +251,18 @@ class BilibiliVideo(models.Model):
 
 
 class UserProfile(models.Model):
-    """用户扩展资料：头像、简介。徽章按连续记录天数实时计算，不入库。"""
+    """用户扩展资料：头像、简介。徽章按连续记录天数实时计算，不入库。
+
+    ``phix_user_id``：phix 统一账号中心里的用户号（见 core/phix_auth.py）。
+    为空 = 这个账号还是纯本地的；有值 = 认证委托给 phix，本地密码已作废。
+    """
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                 related_name="profile")
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     bio = models.CharField(max_length=200, blank=True, default="")
     language = models.CharField(max_length=8, blank=True, default="zh")  # zh / en
+    phix_user_id = models.BigIntegerField(null=True, blank=True, default=None,
+                                          db_index=True)
 
     def __str__(self):
         return f"profile:{self.user.username}"

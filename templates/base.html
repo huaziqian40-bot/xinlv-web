@@ -12,6 +12,26 @@
   {% block style %}{% endblock %}
 </head>
 <body class="{% if latest_mood %}mood-{{ latest_mood.key }} mood-intensity-{{ latest_mood.intensity_level }}{% endif %}">
+  {% if sso_landed %}
+  <!-- 刚从 phix 官网 / PHL 网页端用一次性码免密登录过来（见 core/phix_sso.py） -->
+  <div class="migrate-notice">
+    <span>已用 <strong>PHIX 账号</strong>自动登录，无需再输入密码。</span>
+  </div>
+  {% endif %}
+  {% if site.show_migration_notice %}
+  <!-- 账号迁移通告条：提醒老用户直接用原用户名密码登录（全站可见，后台可关） -->
+  <div class="migrate-notice">
+    <span>我们正在把账号迁移到统一的 phix 账号：<strong>请直接用你原来的用户名与密码登录</strong>，系统会在首次登录时自动为你创建 phix 账号并保留你的数据。</span>
+  </div>
+  {% endif %}
+  {% if migration_recovery_code %}
+  <!-- 迁移后的恢复码：只显示这一次，请立即妥善保存 -->
+  <div class="recovery-notice">
+    <strong>你的 phix 恢复码（仅显示这一次，请立即妥善保存）</strong>
+    <div class="recovery-code">{{ migration_recovery_code }}</div>
+    <p class="recovery-hint">恢复码是你账号数据的钥匙，忘记密码时可凭它找回。不要截图外传，也不要透露给任何人。</p>
+  </div>
+  {% endif %}
   <!-- 情绪氛围叠加层 -->
   <div class="mood-overlay"></div>
   <div class="rain-container" id="rain-container"></div>
@@ -37,13 +57,17 @@
       {% if user.is_authenticated %}
         {% if user.is_staff %}<a class="acc-link" href="/manage/">{{ T.manage }}</a>{% endif %}
         <a class="acc-link" href="/me/">{{ T.my_home }}</a>
-        <span class="acc-user">{{ T.hello }}{{ user.username }}</span>
+        <span class="acc-user"><span class="phix-avatar" title="phix 账号头像（客户端可同步真实头像）">{{ user.username|slice:":1"|upper }}</span>{{ T.hello }}{{ user.username }}</span>
         <form method="post" action="/logout/" class="logout-inline">
           {% csrf_token %}<button class="acc-btn ghost">{{ T.logout }}</button>
         </form>
       {% else %}
         <a class="acc-link" href="/login/?next={{ request.path }}">{{ T.login }}</a>
         <a class="acc-btn" href="/register/?next={{ request.path }}">{{ T.register }}</a>
+      {% endif %}
+      {# 已登录的心履用户 → 一键带着一次性码跳去 phix 官网（免密） #}
+      {% if user.is_authenticated %}
+        <a class="acc-link sso-link" href="/phix/sso/start/?next=/account/" title="用心履当前账号免密打开 phix 官网">PHIX 官网 ↗</a>
       {% endif %}
     </div>
   </header>

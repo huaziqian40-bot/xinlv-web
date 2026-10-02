@@ -155,6 +155,7 @@ def site(request):
         s.crisis_hotline = request.POST.get("crisis_hotline", "").strip()
         s.disclaimer_content = request.POST.get("disclaimer_content", "")
         s.ai_prompt = request.POST.get("ai_prompt", "")[:12000]
+        s.show_migration_notice = request.POST.get("show_migration_notice") == "on"
         s.save()
         messages.success(request, "已保存。访客刷新页面即可看到。")
         return redirect("manage_site")

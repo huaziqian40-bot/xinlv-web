@@ -3,15 +3,19 @@
 deepseek.chat 一律 mock，不依赖外部网络和 API Key。"""
 import datetime as dt
 import json
+import threading
+import time
+import urllib.parse
 import uuid as _uuid
 from unittest import mock
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from .models import MoodEntry, ChatMessage, ApiToken, GameConfig
-from . import ratelimit
+from . import ratelimit, syncwatch
+from .api import _mood_cursor
 
 User = get_user_model()
 
@@ -302,3 +306,143 @@ class ApiTest(TestCase):
             "csrfmiddlewaretoken": token}, HTTP_X_CSRFTOKEN=token)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(GameConfig.objects.get(pk=1).gravity, 0.5)
+
+
+# ==================== 长轮询 /api/v1/sync/watch/ ====================
+# 纯逻辑用 TestCase（不碰 HTTP），端点与并发用 TransactionTestCase（后台线程能
+# 读到彼此的提交，事务型 TestCase 包着一层事务反而看不全）。
+class WatchSyncwatchTest(TestCase):
+    """syncwatch 纯逻辑：不经过视图，直接测 wait_for_change。"""
+
+    def states(self, a="cur-1", b="cur-2"):
+        holder = {"cur": a}
+
+        def read_cursor():
+            return holder["cur"]
+
+        return holder, read_cursor
+
+    def test_wait_returns_immediately_when_cursor_already_differs(self):
+        _, read_cursor = self.states(a="cur-1", b="cur-2")
+        t0 = time.monotonic()
+        changed, cursor = syncwatch.wait_for_change(read_cursor, "cur-2", max_hold=5)
+        self.assertTrue(changed)
+        self.assertEqual(cursor, "cur-1")
+        self.assertLess(time.monotonic() - t0, 2.0)   # 应立即醒，不该干等
+
+    def test_wait_returns_on_bump_from_another_thread(self):
+        holder, read_cursor = self.states(a="cur-1", b="cur-2")
+        holder["cur"] = "cur-1"
+        result = {}
+
+        def worker():
+            result["out"] = syncwatch.wait_for_change(read_cursor, "cur-1", max_hold=5)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        time.sleep(0.2)          # 让它先进入挂起
+        holder["cur"] = "cur-2"  # 数据真的变了
+        syncwatch.bump()         # 进程内叫醒
+        t.join(timeout=3)
+        self.assertFalse(t.is_alive(), "bump 后应及时醒，不该挂满")
+        self.assertEqual(result["out"], (True, "cur-2"))
+
+    def test_wait_times_out_with_short_patched_hold(self):
+        # 用很短的最大挂起时间，验证两个事：① 超时回 changed=false；
+        # ② max_hold=None 是**调用时**才读模块常量——若写成默认参数值，patch
+        # 不生效，这个用例就会真挂满 25 秒。
+        _, read_cursor = self.states(a="cur-1", b="cur-2")
+        t0 = time.monotonic()
+        with mock.patch.object(syncwatch, "MAX_HOLD_SECONDS", 0.05):
+            changed, cursor = syncwatch.wait_for_change(read_cursor, "cur-1")
+        took = time.monotonic() - t0
+        self.assertFalse(changed)
+        self.assertEqual(cursor, "cur-1")
+        self.assertLess(took, 2.0)
+
+
+class WatchApiTest(TransactionTestCase):
+    """端点级：认证、光标、名额打回、端到端唤醒。"""
+
+    def setUp(self):
+        ratelimit._hits.clear()
+        self.user = User.objects.create_user(username="watchuser", password="pw123456")
+
+    def auth(self, token):
+        return {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+
+    def login(self):
+        r = self.client.post("/api/v1/login/", data=json.dumps({
+            "username": "watchuser", "password": "pw123456", "device": "test"}),
+            content_type="application/json")
+        self.assertEqual(r.status_code, 200, r.content)
+        return r.json()["token"]
+
+    def push(self, token, entries):
+        return self.client.post("/api/v1/sync/push/", data=json.dumps(
+            {"entries": entries}), content_type="application/json",
+            **self.auth(token))
+
+    def test_watch_requires_auth(self):
+        r = self.client.get("/api/v1/sync/watch/")
+        self.assertEqual(r.status_code, 401)
+
+    def test_no_since_returns_current_cursor_immediately(self):
+        token = self.login()
+        t0 = time.monotonic()
+        r = self.client.get("/api/v1/sync/watch/", **self.auth(token)).json()
+        self.assertLess(time.monotonic() - t0, 2.0)   # 不挂，立刻回
+        self.assertFalse(r["changed"])
+        self.assertEqual(r["cursor"], _mood_cursor(self.user))
+        self.assertIn("server_time", r)
+
+    def test_cursor_changes_on_push_not_without(self):
+        token = self.login()
+        before = _mood_cursor(self.user)
+        # 什么都不做时，光标不变
+        self.assertEqual(_mood_cursor(self.user), before)
+        self.push(token, [{"uuid": str(_uuid.uuid4()), "date": "2026-08-01",
+                           "mood": "happy", "updated_at": _future_iso()}])
+        after = _mood_cursor(self.user)
+        self.assertNotEqual(before, after, "推入新记录后光标应立即变化")
+
+    def test_watch_full_slots_returns_retry_after(self):
+        token = self.login()
+        held = []
+        for _ in range(syncwatch.WATCH_SLOTS):
+            if syncwatch.try_acquire_slot():
+                held.append(True)
+        self.assertEqual(len(held), syncwatch.WATCH_SLOTS, "预占应拿满所有名额")
+        try:
+            r = self.client.get("/api/v1/sync/watch/?since=anything",
+                                **self.auth(token)).json()
+            # 名额满：立刻打回，带显式 retry_after，绝不该挂
+            self.assertFalse(r["changed"])
+            self.assertEqual(r["retry_after"], syncwatch.BUSY_RETRY_AFTER_SECONDS)
+        finally:
+            for _ in held:
+                syncwatch.release_slot()
+
+    def test_end_to_end_wake_on_push(self):
+        token = self.login()
+        auth = self.auth(token)
+        first = self.client.get("/api/v1/sync/watch/", **auth).json()
+        since = first["cursor"]          # 拿到当前光标作为要挂的 since
+        # since 里的 iso 时间带 '+' 号，直接拼进 query 会被解码成空格，先转义
+        url = "/api/v1/sync/watch/?since=" + urllib.parse.quote(since)
+        result = {}
+
+        def held():
+            client = Client()
+            result["resp"] = client.get(url, **auth)
+
+        t = threading.Thread(target=held)
+        t.start()
+        time.sleep(0.3)      # 让后台请求先挂起
+        self.push(token, [{"uuid": str(_uuid.uuid4()), "date": "2026-08-02",
+                           "mood": "calm", "updated_at": _future_iso()}])
+        t.join(timeout=5)
+        self.assertFalse(t.is_alive(), "push 后挂起的 watch 应及时醒")
+        body = result["resp"].json()
+        self.assertTrue(body["changed"], "push 之后应报告 changed=true")
+        self.assertIn("cursor", body)

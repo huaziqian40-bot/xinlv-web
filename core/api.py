@@ -17,6 +17,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import IntegrityError
+from django.db.models import Max
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -25,7 +26,7 @@ from django.views.decorators.http import require_POST
 from .models import (MoodEntry, ChatMessage, Song, Activity, PsychologyTip,
                      BilibiliVideo, SiteSettings, GameConfig, ApiToken, MOODS, MOOD_KEYS, MOOD_MAP,
                      compute_streak_and_badges)
-from . import recommendations, deepseek, crisis, ratelimit
+from . import recommendations, deepseek, crisis, ratelimit, syncwatch
 
 API_VERSION = "v1"
 PUSH_BATCH_LIMIT = 500        # 单次推送最多条数，防恶意大包
@@ -293,9 +294,69 @@ def sync_push(request):
                 errors.append({"index": i, "uuid": uid, "error": "uuid 冲突"})
                 continue
 
+    # 真有写入（新增/更新）时，叫醒所有挂在 /sync/watch 上的客户端。
+    # 放在所有数据库写入 commit 之后 —— 万一 notify 出问题，绝不能把已写的数据回滚掉。
+    if saved or updated:
+        syncwatch.bump()
+
     return JsonResponse({
         "saved": saved, "updated": updated, "skipped": skipped,
         "errors": errors, "server_time": timezone.now().isoformat(),
+    })
+
+
+def _mood_cursor(user):
+    """这个账号云端状态的**不透明光标**。
+
+    只看两样：心情记录条数（含墓碑）+ 最新一次更新时间。任何写入/删除都会把
+    `updated_at` 推到最新（`auto_now`），所以光标必然变化；没变化就说明这一轮
+    真的什么都没发生。
+
+    从库里现算（而不是记在进程内存里），换 worker、重启服务都不会漏变化。
+    """
+    latest = MoodEntry.all_objects.filter(user=user).aggregate(
+        latest=Max("updated_at"))["latest"]
+    n = MoodEntry.all_objects.filter(user=user).count()
+    return f"{n}:{_iso(latest) if latest else ''}"
+
+
+@api_login_required
+def sync_watch(request):
+    """挂着不回，直到这个账号的心情数据变了或超时。
+
+    查询参数 `since`：客户端上次拿到的光标（不传 = 立刻返回当前状态）。
+    响应 `{"changed": bool, "cursor": "...", "server_time": "..."}`。
+    客户端拿到 `changed=true` 就立刻跑一次 `/sync/pull/`；`false` 说明只是超时，
+    再挂一次即可。
+
+    为什么值得：原来客户端要等用户手动刷新才知道别的设备有没有改。挂在这里
+    之后，别的设备一改，这边一个 RTT 就知道。
+
+    挂起期间一直占着一个 waitress 线程，所以名额有限（见 syncwatch.WATCH_SLOTS）。
+    拿不到名额就**立刻**回，并明确告诉客户端"过 retry_after 秒再来" —— 不这么
+    说的话客户端会把"被打回"当成"超时"，立刻重挂，变成热循环。
+    """
+    user = request.api_user
+    since = str(request.GET.get("since") or "").strip()
+    if not since:
+        # 没带光标：当作"第一次问"，直接把当前光标给出去，不挂。
+        return JsonResponse({"changed": False, "cursor": _mood_cursor(user),
+                             "server_time": timezone.now().isoformat()})
+    if not syncwatch.try_acquire_slot():
+        return JsonResponse({"changed": False, "cursor": _mood_cursor(user),
+                             "retry_after": syncwatch.BUSY_RETRY_AFTER_SECONDS,
+                             "server_time": timezone.now().isoformat()})
+    try:
+        changed, cursor = syncwatch.wait_for_change(
+            lambda: _mood_cursor(user), since)
+    finally:
+        # 客户端中途断开时 waitress 会直接抛异常打断这里，所以必须 finally 还名额，
+        # 否则漏还几次之后长轮询就被永久关掉了。
+        syncwatch.release_slot()
+    return JsonResponse({
+        "changed": changed,
+        "cursor": cursor,
+        "server_time": timezone.now().isoformat(),
     })
 
 

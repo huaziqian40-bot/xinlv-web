@@ -4,7 +4,7 @@
 <div class="auth-card">
   <h1>登录</h1>
   <p class="muted">{{ T.login_sub }}</p>
-  {% if rate_limited %}<div class="auth-err">尝试太频繁了，请过几分钟再试。</div>{% elif form.errors %}<div class="auth-err">账号或密码不对，再试一次。</div>{% endif %}
+  {% if rate_limited %}<div class="auth-err">尝试太频繁了，请过几分钟再试。</div>{% elif sso_error %}<div class="auth-err">免密登录没成功（{{ sso_error }}），请用账号密码登录。</div>{% elif form.errors %}<div class="auth-err">账号或密码不对，再试一次。</div>{% endif %}
   <form method="post" action="/login/">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
@@ -12,6 +12,10 @@
     <input type="password" name="password" placeholder="密码" required>
     <button class="primary big" type="submit">登录</button>
   </form>
+  <!-- 跨站免密登录：已经登录过 phix 官网 / PHL 网页端的人，不用在这里再输一次密码。
+       /phix/sso/start/ 会用心履当前会话让 phix 签一枚一次性码，再跳去官网兑换。 -->
+  <p class="auth-sso"><a class="sso-btn" href="/phix/sso/start/?next=/account/">用 PHIX 账号继续（免密）</a></p>
+  <p class="auth-sso-hint">在 <a href="https://phix.ing">phix 官网</a> 或 Pinghe Launcher 网页端登录过？点上面这个按钮，一次性码会在两边自动完成登录。</p>
   <p class="auth-alt">{{ T.no_account }}<a href="/register/?next={{ next }}">{{ T.go_register }}</a></p>
 </div>
 {% endblock %}

@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from . import views, admin_views, auth_views as my_auth, feature_views, api, ratelimit
+from . import views, admin_views, auth_views as my_auth, feature_views, api, ratelimit, phix_sso
 
 urlpatterns = [
     # ---- 客户端 REST API（安卓/桌面，Bearer Token 认证）----
@@ -10,6 +10,7 @@ urlpatterns = [
     path("api/v1/logout/", api.logout, name="api_logout"),
     path("api/v1/sync/pull/", api.sync_pull, name="api_sync_pull"),
     path("api/v1/sync/push/", api.sync_push, name="api_sync_push"),
+    path("api/v1/sync/watch/", api.sync_watch, name="api_sync_watch"),
     path("api/v1/catalog/", api.catalog, name="api_catalog"),
     path("api/v1/recommend/", api.recommend, name="api_recommend"),
     path("api/v1/chat/", api.chat, name="api_chat"),
@@ -54,6 +55,12 @@ urlpatterns = [
         template_name="registration/login.html", redirect_authenticated_user=True), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("register/", my_auth.register, name="register"),
+
+    # ---- 跨站免密登录（phix 一次性码，见 core/phix_sso.py）----
+    # /phix/sso/?sso=<码>      官网跳过来 → 换成心履自己的会话 cookie
+    # /phix/sso/start/?next=   心履已登录 → 带码跳去官网自动登录
+    path("phix/sso/", phix_sso.consume, name="phix_sso_consume"),
+    path("phix/sso/start/", phix_sso.start, name="phix_sso_start"),
 
     # ---- 管理后台（仅 is_staff）----
     path("manage/", admin_views.dashboard, name="manage_home"),

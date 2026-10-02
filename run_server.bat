@@ -15,5 +15,10 @@ if errorlevel 1 (
 
 echo.
 echo 正在启动心情树洞服务器（端口 8000）...
-python -m waitress --listen=0.0.0.0:8000 moodsite.wsgi:application
+REM 线程数从 waitress 默认的 4 提到 32，给长轮询（/api/v1/sync/watch/）留出余量：
+REM 该接口会占住线程最多 25 秒，线程太少会被饿死（8 条挂起 vs 4 个线程 = 整站卡死）。
+REM **线程数和 MOODTREE_WATCH_SLOTS 必须成对改**：这里给 32，才好在生产环境里
+REM 把它设成 8。代码里的默认值是 2（按 waitress 默认的 4 线程算的），
+REM 不改这里就直接把 MOODTREE_WATCH_SLOTS 提到 8 会把线程池占满。
+python -m waitress --listen=0.0.0.0:8000 --threads=32 moodsite.wsgi:application
 pause

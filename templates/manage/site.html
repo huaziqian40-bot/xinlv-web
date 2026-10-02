@@ -24,6 +24,14 @@
   </div>
 
   <div class="m-card">
+    <h2>账号迁移通告</h2>
+    <p class="muted">开启后，网站顶部会显示一条通告，提醒老用户直接用原用户名密码登录（首次登录自动迁移到 phix 账号）。</p>
+    <label class="m-field">
+      <input type="checkbox" name="show_migration_notice" {% if s.show_migration_notice %}checked{% endif %}> 显示「账号迁移」顶部通告条
+    </label>
+  </div>
+
+  <div class="m-card">
     <h2>免责声明内容</h2>
     <p class="muted">支持 Markdown。<b>留空则使用网站内置的默认中英文条款</b>；填了就用你写的这份。</p>
     <textarea name="disclaimer_content" rows="12" style="width:100%;font-family:ui-monospace,monospace;font-size:.88rem;border:1.5px solid var(--line);border-radius:10px;padding:.7rem;background:var(--bg)">{{ s.disclaimer_content }}</textarea>

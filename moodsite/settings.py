@@ -192,6 +192,7 @@ RATE_LIMITS = {
     "login": (int(os.environ.get("RL_LOGIN_N", "8")), 300),       # 登录：5分钟内最多8次失败
     "tts": (int(os.environ.get("RL_TTS_N", "30")), 60),           # 语音合成：60秒最多30次
     "api_login": (int(os.environ.get("RL_API_LOGIN_N", "10")), 600), # 客户端API登录：10分钟内最多10次
+    "phix_sso": (int(os.environ.get("RL_SSO_N", "20")), 300),     # 免密兑换：5分钟内最多20次
 }
 
 # --- 日志：错误写到文件，方便排查崩溃 ---
@@ -221,3 +222,38 @@ LOGGING = {
         "django.security": {"handlers": ["file"], "level": "WARNING", "propagate": False},
     },
 }
+
+# ===================== phix 统一账号（默认关闭） =====================
+# 心履的账号与 PH Launcher / PLL 的账号是**同一套**（phix 账号，见 D:\phix\phix-协议规范.md）。
+# 心履这边用"认证委托"实现：本地用户表不动，只把"是不是合法用户"这一个判断交给 phix。
+#
+# 默认**全关**，行为与从前一模一样；要启用就把 PHIX_AUTH_ENABLED 设为 1，
+# 并且必须同时给 PHIX_SERVICE_KEY（与 phix 服务端的 PHIX_SERVICE_KEY 一致）。
+# 细节与安全取舍见 core/phix_auth.py 的模块 docstring。
+PHIX_AUTH_ENABLED = os.environ.get("PHIX_AUTH_ENABLED", "").strip().lower() in (
+    "1", "true", "yes", "on")
+PHIX_SERVER = os.environ.get("PHIX_SERVER", "http://127.0.0.1:8931").rstrip("/")
+PHIX_SERVICE_KEY = os.environ.get("PHIX_SERVICE_KEY", "").strip()
+
+if PHIX_AUTH_ENABLED and PHIX_SERVICE_KEY:
+    # phix 放第一位：已关联 phix 的账号由它拍板；未关联的账号它返回 None，落到本地后端
+    AUTHENTICATION_BACKENDS = [
+        "core.phix_auth.PhixAuthBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
+
+# ---- 跨站免密登录（一次性码，见 core/phix_sso.py 与 D:\phix\website\SSO-跨域与子域方案.md）----
+# 「登录心履 / PHL 网页端 / phix 官网任一个，其余自动登录」的心履侧实现：
+#   官网 → 心履：/phix/sso/?sso=<一次性码> 换成心履自己的会话
+#   心履 → 官网：/phix/sso/start/ 带码跳去官网兑换
+# 一次性码由 phix 保证 120 秒、单次、绑站点，且**不含任何凭据**；这里只负责搬运。
+PHIX_SSO_ENABLED = os.environ.get("PHIX_SSO_ENABLED", "1").strip().lower() in (
+    "1", "true", "yes", "on")
+#: 官网地址（跳过去兑换时用）
+PHIX_SITE_URL = os.environ.get("PHIX_SITE_URL", "https://phix.ing").rstrip("/")
+
+# ---- Cookie 域（默认空 = 只对本域有效，即现在的生产形态）----
+# 备选方案：把心履挪到 xinlv.phix.ing，并把这里设成 .phix.ing，两边就能共享登录态
+# （详见 SSO-跨域与子域方案.md）。默认留空，行为与从前完全一致。
+SESSION_COOKIE_DOMAIN = os.environ.get("SESSION_COOKIE_DOMAIN", "").strip() or None
+CSRF_COOKIE_DOMAIN = os.environ.get("CSRF_COOKIE_DOMAIN", "").strip() or None
