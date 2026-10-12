@@ -51,4 +51,36 @@
 {% else %}
 <p class="muted">{{ T.footprint_private }}</p>
 {% endif %}
+
+{% if own %}
+<section id="about-software">
+  <h2 class="pf-section">关于软件</h2>
+  <div class="about-contact m-card">
+    <p><b>当前版本</b>：网页端始终是最新版本，无需安装或升级，也无需手动更新。</p>
+    <p><b>更新状态</b>：网页打开时即加载服务器上的最新内容，<a href="#" onclick="location.reload();return false;">刷新页面</a> 即可重新加载。</p>
+    <p class="muted">上海民办平和学校 · 维修社 · 用代码装点校园生活</p>
+    <p>
+      📧 邮箱：
+      {% if site.contact_email %}{{ site.contact_email }}{% endif %}
+      {% if site.contact_email and "norine.liu" not in site.contact_email %}/ {% endif %}{% if "norine.liu" not in site.contact_email %}<a href="mailto:norine.liu@icloud.com">norine.liu@icloud.com</a>{% endif %}
+      {% if "huaziqian40" not in site.contact_email %}/ <a href="mailto:huaziqian40@gmail.com">huaziqian40@gmail.com</a>{% endif %}
+    </p>
+    <p>
+      📞 电话：
+      {% if site.contact_phone %}{{ site.contact_phone }}{% endif %}
+      {% if site.contact_phone and "18901712280" not in site.contact_phone %}/ {% endif %}{% if "18901712280" not in site.contact_phone %}18901712280{% endif %}
+      {% if "13675821816" not in site.contact_phone %}/ 13675821816{% endif %}
+    </p>
+    <p>
+      💬 微信：
+      {% if site.contact_wechat %}{{ site.contact_wechat }}{% endif %}
+      {% if site.contact_wechat and "Norine2010" not in site.contact_wechat %}/ {% endif %}{% if "Norine2010" not in site.contact_wechat %}Norine2010{% endif %}
+      {% if "int_32_2147483647" not in site.contact_wechat %}/ int_32_2147483647{% endif %}
+    </p>
+    <p>📺 B站：<a href="{{ site.contact_bilibili|default:"https://space.bilibili.com/1121702307" }}" target="_blank" rel="noopener">点击进入我的主页 ↗</a></p>
+    <p class="muted">© 2026 phix</p>
+    <p><a href="https://phix.ing/download/" target="_blank" rel="noopener">访问官网 ↗</a></p>
+  </div>
+</section>
+{% endif %}
 {% endblock %}
